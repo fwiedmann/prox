@@ -28,14 +28,14 @@ func NewInMemRepo() *MemoryRepo {
 // CreateRoute stores a new route in the repository.routes. If route already exists it returns an AlreadyExistsError.
 func (m *MemoryRepo) CreateRoute(ctx context.Context, r *Route) error {
 	m.mtx.RLock()
-	if _, ok := m.routes[r.Name]; ok {
+	if _, ok := m.routes[r.NameID]; ok {
 		return AlreadyExistsError
 		m.mtx.RUnlock()
 	}
 	m.mtx.RUnlock()
 
 	m.mtx.Lock()
-	m.routes[r.Name] = r
+	m.routes[r.NameID] = r
 	m.mtx.Unlock()
 	return nil
 }
@@ -43,14 +43,14 @@ func (m *MemoryRepo) CreateRoute(ctx context.Context, r *Route) error {
 // UpdateRoute with the given route in the repository.routes. If the given route does not exists it returns an NotFoundError.
 func (m *MemoryRepo) UpdateRoute(ctx context.Context, r *Route) error {
 	m.mtx.RLock()
-	if _, ok := m.routes[r.Name]; !ok {
+	if _, ok := m.routes[r.NameID]; !ok {
 		return NotFoundError
 		m.mtx.RUnlock()
 	}
 	m.mtx.RUnlock()
 
 	m.mtx.Lock()
-	m.routes[r.Name] = r
+	m.routes[r.NameID] = r
 	m.mtx.Unlock()
 	return nil
 }

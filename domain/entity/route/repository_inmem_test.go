@@ -32,7 +32,7 @@ func TestMemoryRepo_CreateRoute(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				r: Route{
-					Name: "1",
+					NameID: "1",
 				},
 			},
 			wantErr: false,
@@ -40,12 +40,12 @@ func TestMemoryRepo_CreateRoute(t *testing.T) {
 		{
 			name: "RouteAlreadyExists",
 			fields: fields{
-				routes: map[NameID]*Route{"1": {Name: "1"}},
+				routes: map[NameID]*Route{"1": {NameID: "1"}},
 			},
 			args: args{
 				ctx: context.Background(),
 				r: Route{
-					Name: "1",
+					NameID: "1",
 				},
 			},
 			wantErr: true,
@@ -98,14 +98,14 @@ func TestMemoryRepo_UpdateRoute(t *testing.T) {
 			name: "ValidUpdate",
 			fields: fields{
 				routes: map[NameID]*Route{"1": {
-					Name:     "1",
+					NameID:   "1",
 					Priority: 1,
 				}},
 			},
 			args: args{
 				ctx: context.Background(),
 				r: Route{
-					Name:     "1",
+					NameID:   "1",
 					Priority: 2,
 				},
 			},
@@ -115,14 +115,14 @@ func TestMemoryRepo_UpdateRoute(t *testing.T) {
 			name: "RouteNotFound",
 			fields: fields{
 				routes: map[NameID]*Route{"1": {
-					Name:     "1",
+					NameID:   "1",
 					Priority: 1,
 				}},
 			},
 			args: args{
 				ctx: context.Background(),
 				r: Route{
-					Name:     "2",
+					NameID:   "2",
 					Priority: 2,
 				},
 			},
@@ -142,8 +142,8 @@ func TestMemoryRepo_UpdateRoute(t *testing.T) {
 			}
 
 			if err == nil {
-				if !reflect.DeepEqual(tt.args.r, *tt.fields.routes[tt.args.r.Name]) {
-					t.Errorf("UpdateRoute() did not update the route: want %+v, got %+v", tt.args.r, tt.fields.routes[tt.args.r.Name])
+				if !reflect.DeepEqual(tt.args.r, *tt.fields.routes[tt.args.r.NameID]) {
+					t.Errorf("UpdateRoute() did not update the route: want %+v, got %+v", tt.args.r, tt.fields.routes[tt.args.r.NameID])
 					return
 				}
 			}
@@ -171,7 +171,7 @@ func TestMemoryRepo_DeleteRoute(t *testing.T) {
 		{
 			name: "ValidDelete",
 			fields: fields{
-				routes: map[NameID]*Route{"1": {Name: "1"}},
+				routes: map[NameID]*Route{"1": {NameID: "1"}},
 			},
 			args: args{
 				ctx: context.Background(),
@@ -182,7 +182,7 @@ func TestMemoryRepo_DeleteRoute(t *testing.T) {
 		{
 			name: "RouteNotFound",
 			fields: fields{
-				routes: map[NameID]*Route{"1": {Name: "1"}},
+				routes: map[NameID]*Route{"1": {NameID: "1"}},
 			},
 			args: args{
 				ctx: context.Background(),
