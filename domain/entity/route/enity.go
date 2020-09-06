@@ -5,26 +5,39 @@ import (
 	"net/url"
 	"regexp"
 	"time"
-
-	"github.com/fwiedmann/prox/domain/entity"
 )
 
 // Middleware // Todo add description
 type Middleware func(http.HandlerFunc) http.HandlerFunc
 
+// NameID
+type NameID string
+
+type RequestIdentifier string
+
 // Route entity // Todo add description
 type Route struct {
-	ID                    entity.ID
-	UpstreamURL           *url.URL
-	UpstreamTimeout       time.Duration
-	UpstreamTLSValidation bool
-	// Todo make matcher private, add Host,Path string and HostRegexExpression,PathRegexExpression
-	// Todo add methods which will call the hostmatch, pathmatch.Matchstring()
-	HostMatch              *regexp.Regexp
-	PathMatch              *regexp.Regexp
-	Priority               int
+	Name                   NameID
+	UpstreamURL            *url.URL
+	UpstreamTimeout        time.Duration
+	UpstreamTLSValidation  bool
+	Priority               uint
+	Port                   uint16
+	Hostname               RequestIdentifier
+	HostnameRegexp         RequestIdentifier
+	Path                   RequestIdentifier
+	PathRegexp             RequestIdentifier
 	ClientRequestModifiers []Middleware
 	UpstreamModifiers      []func(r *http.Request) error
 	DownstreamModifiers    []func(w http.ResponseWriter, response *http.Response) error
-	Port                   int
+	hostMatch              *regexp.Regexp
+	pathMatch              *regexp.Regexp
+}
+
+func (r *Route) IsHostnameMatching(h string) bool {
+	return r.hostMatch.MatchString(h)
+}
+
+func (r *Route) IsPathMatching(p string) bool {
+	return r.pathMatch.MatchString(p)
 }

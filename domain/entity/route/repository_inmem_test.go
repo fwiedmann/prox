@@ -5,14 +5,12 @@ import (
 	"reflect"
 	"sync"
 	"testing"
-
-	"github.com/fwiedmann/prox/domain/entity"
 )
 
 func TestMemoryRepo_CreateRoute(t *testing.T) {
 	t.Parallel()
 	type fields struct {
-		routes map[entity.ID]Route
+		routes map[NameID]*Route
 		mtx    sync.RWMutex
 	}
 	type args struct {
@@ -29,12 +27,12 @@ func TestMemoryRepo_CreateRoute(t *testing.T) {
 		{
 			name: "ValidCreate",
 			fields: fields{
-				routes: make(map[entity.ID]Route),
+				routes: make(map[NameID]*Route),
 			},
 			args: args{
 				ctx: context.Background(),
 				r: Route{
-					ID: "1",
+					Name: "1",
 				},
 			},
 			wantErr: false,
@@ -42,12 +40,12 @@ func TestMemoryRepo_CreateRoute(t *testing.T) {
 		{
 			name: "RouteAlreadyExists",
 			fields: fields{
-				routes: map[entity.ID]Route{"1": {ID: "1"}},
+				routes: map[NameID]*Route{"1": {Name: "1"}},
 			},
 			args: args{
 				ctx: context.Background(),
 				r: Route{
-					ID: "1",
+					Name: "1",
 				},
 			},
 			wantErr: true,
@@ -61,7 +59,7 @@ func TestMemoryRepo_CreateRoute(t *testing.T) {
 			}
 
 			routeCountBeforeCreate := len(tt.fields.routes)
-			err := m.CreateRoute(tt.args.ctx, tt.args.r)
+			err := m.CreateRoute(tt.args.ctx, &tt.args.r)
 			if err != nil != tt.wantErr {
 				t.Errorf("CreateRoute() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -83,7 +81,7 @@ func TestMemoryRepo_CreateRoute(t *testing.T) {
 func TestMemoryRepo_UpdateRoute(t *testing.T) {
 	t.Parallel()
 	type fields struct {
-		routes map[entity.ID]Route
+		routes map[NameID]*Route
 		mtx    sync.RWMutex
 	}
 	type args struct {
@@ -99,15 +97,15 @@ func TestMemoryRepo_UpdateRoute(t *testing.T) {
 		{
 			name: "ValidUpdate",
 			fields: fields{
-				routes: map[entity.ID]Route{"1": {
-					ID:       "1",
+				routes: map[NameID]*Route{"1": {
+					Name:     "1",
 					Priority: 1,
 				}},
 			},
 			args: args{
 				ctx: context.Background(),
 				r: Route{
-					ID:       "1",
+					Name:     "1",
 					Priority: 2,
 				},
 			},
@@ -116,15 +114,15 @@ func TestMemoryRepo_UpdateRoute(t *testing.T) {
 		{
 			name: "RouteNotFound",
 			fields: fields{
-				routes: map[entity.ID]Route{"1": {
-					ID:       "1",
+				routes: map[NameID]*Route{"1": {
+					Name:     "1",
 					Priority: 1,
 				}},
 			},
 			args: args{
 				ctx: context.Background(),
 				r: Route{
-					ID:       "2",
+					Name:     "2",
 					Priority: 2,
 				},
 			},
@@ -138,14 +136,14 @@ func TestMemoryRepo_UpdateRoute(t *testing.T) {
 				mtx:    tt.fields.mtx,
 			}
 
-			err := m.UpdateRoute(tt.args.ctx, tt.args.r)
+			err := m.UpdateRoute(tt.args.ctx, &tt.args.r)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("UpdateRoute() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			if err == nil {
-				if !reflect.DeepEqual(tt.args.r, tt.fields.routes[tt.args.r.ID]) {
-					t.Errorf("UpdateRoute() did not update the route: want %+v, got %+v", tt.args.r, tt.fields.routes[tt.args.r.ID])
+				if !reflect.DeepEqual(tt.args.r, *tt.fields.routes[tt.args.r.Name]) {
+					t.Errorf("UpdateRoute() did not update the route: want %+v, got %+v", tt.args.r, tt.fields.routes[tt.args.r.Name])
 					return
 				}
 			}
@@ -157,12 +155,12 @@ func TestMemoryRepo_UpdateRoute(t *testing.T) {
 func TestMemoryRepo_DeleteRoute(t *testing.T) {
 	t.Parallel()
 	type fields struct {
-		routes map[entity.ID]Route
+		routes map[NameID]*Route
 		mtx    sync.RWMutex
 	}
 	type args struct {
 		ctx context.Context
-		id  entity.ID
+		id  NameID
 	}
 	tests := []struct {
 		name    string
@@ -173,7 +171,7 @@ func TestMemoryRepo_DeleteRoute(t *testing.T) {
 		{
 			name: "ValidDelete",
 			fields: fields{
-				routes: map[entity.ID]Route{"1": {ID: "1"}},
+				routes: map[NameID]*Route{"1": {Name: "1"}},
 			},
 			args: args{
 				ctx: context.Background(),
@@ -184,7 +182,7 @@ func TestMemoryRepo_DeleteRoute(t *testing.T) {
 		{
 			name: "RouteNotFound",
 			fields: fields{
-				routes: map[entity.ID]Route{"1": {ID: "1"}},
+				routes: map[NameID]*Route{"1": {Name: "1"}},
 			},
 			args: args{
 				ctx: context.Background(),
@@ -218,7 +216,7 @@ func TestMemoryRepo_DeleteRoute(t *testing.T) {
 func TestMemoryRepo_ListRoutes(t *testing.T) {
 	t.Parallel()
 	type fields struct {
-		routes map[entity.ID]Route
+		routes map[NameID]*Route
 		mtx    sync.RWMutex
 	}
 	type args struct {
@@ -234,7 +232,7 @@ func TestMemoryRepo_ListRoutes(t *testing.T) {
 		{
 			name: "ValidList",
 			fields: fields{
-				routes: map[entity.ID]Route{"1": {}, "2": {}},
+				routes: map[NameID]*Route{"1": {}, "2": {}},
 			},
 			args: args{
 				ctx: context.Background(),
