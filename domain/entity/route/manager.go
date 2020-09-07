@@ -5,21 +5,28 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"time"
 )
 
 var (
-	EmptyRouteError                      = errors.New("route is nil")
-	NoEntityIDError                      = errors.New("route NameID is empty")
-	EmptyRequestIdentifiersError         = errors.New("all routes RequestIdentifier are empty. At least one is required")
-	DuplicatedRequestIdentifierError     = errors.New("all request identifiers are configured. only one per route host / path is allowed")
-	DuplicatedHostRequestIdentifierError = errors.New("all host request identifiers are configured. only one per route is allowed")
-	DuplicatedPathRequestIdentifierError = errors.New("all path request identifiers are configured. only one per route is allowed")
-	InvalidHostNameError                 = errors.New(fmt.Sprintf("hostname is invalid. Used expression: %s", hostNameRegexp.String()))
+	ErrorEmptyRoute                      = errors.New("route is nil")
+	ErrorNoEntityID                      = errors.New("route NameID is empty")
+	ErrorEmptyRequestIdentifiers         = errors.New("all routes RequestIdentifier are empty. At least one is required")
+	ErrorDuplicatedRequestIdentifier     = errors.New("all request identifiers are configured. only one per route host / path is allowed")
+	ErrorDuplicatedHostRequestIdentifier = errors.New("all host request identifiers are configured. only one per route is allowed")
+	ErrorDuplicatedPathRequestIdentifier = errors.New("all path request identifiers are configured. only one per route is allowed")
+	ErrorInvalidHostName                 = errors.New(fmt.Sprintf("hostname is invalid. Used expression: %s", hostNameRegexp.String()))
+	ErrorInvalidCacheTimeOutDuration     = errors.New("invalid cache time out duration format")
+	ErrorInvalidUpstreamTimeOutDuration  = errors.New("invalid upstream time out duration format")
 
 	hostNameRegexp = regexp.MustCompile("^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])(\\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9]))*$")
 	pathRegexp     = regexp.MustCompile("(\\/[0-9].*\\?|$)")
 	wildcardRegexp = regexp.MustCompile("[\\s\\S]*")
 )
+
+const defaultHTTPUpstreamTimeoutDuration = "10s"
+const defaultCacheTimeoutDuration = "10m"
+const megaBytesToBytesMultiplier = 1e+6
 
 type manager struct {
 	repo repository
@@ -36,11 +43,11 @@ func NewManager(r repository) Manager {
 // UpdateRoute which is stored in the managers repository. If the context has an error UpdateRoute will not call the repository and will return.
 func (m *manager) UpdateRoute(ctx context.Context, r *Route) error {
 	if r == nil {
-		return EmptyRouteError
+		return ErrorEmptyRoute
 	}
 
 	if r.NameID == "" {
-		return NoEntityIDError
+		return ErrorNoEntityID
 	}
 	if ctx.Err() != nil {
 		return ctx.Err()
@@ -61,12 +68,18 @@ func (m *manager) ListRoutes(ctx context.Context) ([]*Route, error) {
 // CreateRoute also responsible to validate the given Route.
 func (m *manager) CreateRoute(ctx context.Context, r *Route) error {
 	if r == nil {
-		return EmptyRouteError
+		return ErrorEmptyRoute
 	}
 
 	if r.NameID == "" {
-		return NoEntityIDError
+		return ErrorNoEntityID
 	}
+
+	if err := parseDurations(r); err != nil {
+		return err
+	}
+
+	parseCacheMaxBodySize(r)
 
 	if err := validateRouteRequestIdentifiers(r); err != nil {
 		return err
@@ -82,21 +95,52 @@ func (m *manager) CreateRoute(ctx context.Context, r *Route) error {
 	return m.repo.CreateRoute(ctx, r)
 }
 
+func parseDurations(r *Route) error {
+	if r.CacheTimeOutDuration == "" {
+		r.CacheTimeOutDuration = defaultCacheTimeoutDuration
+	}
+
+	cacheTimeOut, err := time.ParseDuration(r.CacheTimeOutDuration)
+	if err != nil {
+		return ErrorInvalidCacheTimeOutDuration
+	}
+	r.cacheTimeOutDuration = cacheTimeOut
+
+	if r.UpstreamTimeoutDuration == "" {
+		r.UpstreamTimeoutDuration = defaultHTTPUpstreamTimeoutDuration
+	}
+
+	upstreamTimeOut, err := time.ParseDuration(r.UpstreamTimeoutDuration)
+	if err != nil {
+		return ErrorInvalidUpstreamTimeOutDuration
+	}
+	r.upstreamTimeoutDuration = upstreamTimeOut
+	return nil
+}
+
+func parseCacheMaxBodySize(r *Route) {
+	if r.CacheMaxBodySizeInMegaBytes <= 0 {
+		r.CacheMaxBodySizeInMegaBytes = -1
+	}
+
+	r.cacheMaxBodySizeInBytes = r.CacheMaxBodySizeInMegaBytes * megaBytesToBytesMultiplier
+}
+
 func validateRouteRequestIdentifiers(r *Route) error {
 	if r.Hostname == "" && r.HostnameRegexp == "" && r.Path == "" && r.PathRegexp == "" {
-		return EmptyRequestIdentifiersError
+		return ErrorEmptyRequestIdentifiers
 	}
 
 	if r.Hostname != "" && r.HostnameRegexp != "" && r.Path != "" && r.PathRegexp != "" {
-		return DuplicatedRequestIdentifierError
+		return ErrorDuplicatedRequestIdentifier
 	}
 
 	if r.Hostname != "" && r.HostnameRegexp != "" {
-		return DuplicatedHostRequestIdentifierError
+		return ErrorDuplicatedHostRequestIdentifier
 	}
 
 	if r.Path != "" && r.PathRegexp != "" {
-		return DuplicatedPathRequestIdentifierError
+		return ErrorDuplicatedPathRequestIdentifier
 	}
 	return nil
 }
@@ -144,7 +188,7 @@ func getRouteHostMatch(host, hostExpr string) (*regexp.Regexp, error) {
 
 func addHostRegexpStartAndEndPosition(s string) (string, error) {
 	if !hostNameRegexp.MatchString(s) {
-		return "", InvalidHostNameError
+		return "", ErrorInvalidHostName
 	}
 	return fmt.Sprintf("^%s$", s), nil
 }
@@ -171,7 +215,7 @@ func getRoutePathMatch(path, pathExpr string) (*regexp.Regexp, error) {
 // DeleteRoute which is stored in the managers repository. If the context has an error DeleteRoute will not call the repository and will return.
 func (m *manager) DeleteRoute(ctx context.Context, id NameID) error {
 	if id == "" {
-		return NoEntityIDError
+		return ErrorNoEntityID
 	}
 
 	if ctx.Err() != nil {

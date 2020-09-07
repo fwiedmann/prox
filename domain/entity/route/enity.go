@@ -18,21 +18,43 @@ type RequestIdentifier string
 
 // Route entity contains all information of an router Router which can be used to configure proxy requests.
 type Route struct {
-	NameID                 NameID
-	UpstreamURL            *url.URL
-	UpstreamTimeout        time.Duration
-	UpstreamTLSValidation  bool
-	Priority               uint
-	Port                   uint16
-	Hostname               RequestIdentifier
-	HostnameRegexp         RequestIdentifier
-	Path                   RequestIdentifier
-	PathRegexp             RequestIdentifier
-	ClientRequestModifiers []Middleware
-	UpstreamModifiers      []func(r *http.Request) error
-	DownstreamModifiers    []func(w http.ResponseWriter, response *http.Response) error
-	hostMatch              *regexp.Regexp
-	pathMatch              *regexp.Regexp
+	NameID                      NameID
+	CacheEnabled                bool
+	CacheTimeOutDuration        string
+	CacheMaxBodySizeInMegaBytes int64
+	CacheAllowedContentTypes    []string
+	UpstreamURL                 *url.URL
+	UpstreamTimeoutDuration     string
+	UpstreamTLSValidation       bool
+	Priority                    uint
+	Port                        uint16
+	Hostname                    RequestIdentifier
+	HostnameRegexp              RequestIdentifier
+	Path                        RequestIdentifier
+	PathRegexp                  RequestIdentifier
+	ClientRequestModifiers      []Middleware
+	UpstreamModifiers           []func(r *http.Request) error
+	DownstreamModifiers         []func(w http.ResponseWriter, response *http.Response) error
+	hostMatch                   *regexp.Regexp
+	pathMatch                   *regexp.Regexp
+	cacheTimeOutDuration        time.Duration
+	upstreamTimeoutDuration     time.Duration
+	cacheMaxBodySizeInBytes     int64
+}
+
+// GetCacheMaxBodySizeInBytes return a validated bytes size
+func (r *Route) GetCacheMaxBodySizeInBytes() int64 {
+	return r.cacheMaxBodySizeInBytes
+}
+
+// GetCacheTimeOut returns a parsed duration
+func (r *Route) GetCacheTimeOut() time.Duration {
+	return r.cacheTimeOutDuration
+}
+
+// GetUpstreamTimeout returns a parsed duration
+func (r *Route) GetUpstreamTimeout() time.Duration {
+	return r.upstreamTimeoutDuration
 }
 
 // IsHostnameMatching check if h is valid hostname of the Route.

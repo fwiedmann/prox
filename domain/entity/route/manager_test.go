@@ -24,14 +24,42 @@ func Test_manager_CreateRoute(t *testing.T) {
 		cancelCtx bool
 	}{
 		{
-			name:   "EmptyRouteError",
+			name:   "InvalidCacheDuration",
+			fields: fields{},
+			args: args{
+				ctx: context.Background(),
+				r: &Route{
+					NameID:               "test-route",
+					Hostname:             "docker.com",
+					CacheTimeOutDuration: "10seconds",
+				},
+			},
+			wantErr: true,
+			errType: ErrorInvalidCacheTimeOutDuration,
+		},
+		{
+			name:   "InvalidUpstreamTimeOutDuration",
+			fields: fields{},
+			args: args{
+				ctx: context.Background(),
+				r: &Route{
+					NameID:                  "test-route",
+					Hostname:                "docker.com",
+					UpstreamTimeoutDuration: "10seconds",
+				},
+			},
+			wantErr: true,
+			errType: ErrorInvalidUpstreamTimeOutDuration,
+		},
+		{
+			name:   "ErrorEmptyRoute",
 			fields: fields{},
 			args: args{
 				ctx: context.Background(),
 				r:   nil,
 			},
 			wantErr: true,
-			errType: EmptyRouteError,
+			errType: ErrorEmptyRoute,
 		},
 		{
 			name:   "NoEntityNameID",
@@ -41,7 +69,7 @@ func Test_manager_CreateRoute(t *testing.T) {
 				r:   &Route{},
 			},
 			wantErr: true,
-			errType: NoEntityIDError,
+			errType: ErrorNoEntityID,
 		},
 		{
 			name:   "EmptyRequestIdentifiers",
@@ -53,10 +81,10 @@ func Test_manager_CreateRoute(t *testing.T) {
 				},
 			},
 			wantErr: true,
-			errType: EmptyRequestIdentifiersError,
+			errType: ErrorEmptyRequestIdentifiers,
 		},
 		{
-			name:   "DuplicatedRequestIdentifierError",
+			name:   "ErrorDuplicatedRequestIdentifier",
 			fields: fields{},
 			args: args{
 				ctx: context.Background(),
@@ -69,10 +97,10 @@ func Test_manager_CreateRoute(t *testing.T) {
 				},
 			},
 			wantErr: true,
-			errType: DuplicatedRequestIdentifierError,
+			errType: ErrorDuplicatedRequestIdentifier,
 		},
 		{
-			name:   "DuplicatedHostRequestIdentifierError",
+			name:   "ErrorDuplicatedHostRequestIdentifier",
 			fields: fields{},
 			args: args{
 				ctx: context.Background(),
@@ -83,10 +111,10 @@ func Test_manager_CreateRoute(t *testing.T) {
 				},
 			},
 			wantErr: true,
-			errType: DuplicatedHostRequestIdentifierError,
+			errType: ErrorDuplicatedHostRequestIdentifier,
 		},
 		{
-			name:   "DuplicatedPathRequestIdentifierError",
+			name:   "ErrorDuplicatedPathRequestIdentifier",
 			fields: fields{},
 			args: args{
 				ctx: context.Background(),
@@ -97,10 +125,10 @@ func Test_manager_CreateRoute(t *testing.T) {
 				},
 			},
 			wantErr: true,
-			errType: DuplicatedPathRequestIdentifierError,
+			errType: ErrorDuplicatedPathRequestIdentifier,
 		},
 		{
-			name:   "InvalidHostNameError",
+			name:   "ErrorInvalidHostName",
 			fields: fields{},
 			args: args{
 				ctx: context.Background(),
@@ -110,7 +138,7 @@ func Test_manager_CreateRoute(t *testing.T) {
 				},
 			},
 			wantErr: true,
-			errType: InvalidHostNameError,
+			errType: ErrorInvalidHostName,
 		},
 		{
 			name: "ValidHostNameAndPath",
@@ -175,6 +203,22 @@ func Test_manager_CreateRoute(t *testing.T) {
 			errType: nil,
 		},
 		{
+			name: "ValidPathWithWildcardHostnameWithNegativeMaxBodySizeInBytes",
+			fields: fields{
+				NewInMemRepo(),
+			},
+			args: args{
+				ctx: context.Background(),
+				r: &Route{
+					NameID:                      "test-route",
+					HostnameRegexp:              "docker.com",
+					CacheMaxBodySizeInMegaBytes: -10,
+				},
+			},
+			wantErr: false,
+			errType: nil,
+		},
+		{
 			name: "RepoError",
 			fields: fields{
 				repo: &MemoryRepo{routes: map[NameID]*Route{"test-route": {}}},
@@ -187,7 +231,7 @@ func Test_manager_CreateRoute(t *testing.T) {
 				},
 			},
 			wantErr: true,
-			errType: AlreadyExistsError,
+			errType: ErrorAlreadyExists,
 		},
 		{
 			name: "ContextCanceled",
@@ -250,14 +294,14 @@ func Test_manager_UpdateRoute(t *testing.T) {
 		cancelCtx bool
 	}{
 		{
-			name:   "EmptyRouteError",
+			name:   "ErrorEmptyRoute",
 			fields: fields{},
 			args: args{
 				ctx: context.Background(),
 				r:   nil,
 			},
 			wantErr: true,
-			errType: EmptyRouteError,
+			errType: ErrorEmptyRoute,
 		},
 		{
 			name:   "NoEntityNameID",
@@ -267,7 +311,7 @@ func Test_manager_UpdateRoute(t *testing.T) {
 				r:   &Route{},
 			},
 			wantErr: true,
-			errType: NoEntityIDError,
+			errType: ErrorNoEntityID,
 		},
 		{
 			name: "RepoError",
@@ -282,7 +326,7 @@ func Test_manager_UpdateRoute(t *testing.T) {
 				},
 			},
 			wantErr: true,
-			errType: NotFoundError,
+			errType: ErrorNotFound,
 		},
 		{
 			name:   "ContextCancelled",
@@ -406,7 +450,7 @@ func Test_manager_DeleteRoute(t *testing.T) {
 				ctx: context.Background(),
 				id:  ""},
 			wantErr:   true,
-			errType:   NoEntityIDError,
+			errType:   ErrorNoEntityID,
 			cancelCtx: false,
 		},
 		{
@@ -416,7 +460,7 @@ func Test_manager_DeleteRoute(t *testing.T) {
 				ctx: context.Background(),
 				id:  "test-route"},
 			wantErr:   true,
-			errType:   NotFoundError,
+			errType:   ErrorNotFound,
 			cancelCtx: false,
 		},
 	}

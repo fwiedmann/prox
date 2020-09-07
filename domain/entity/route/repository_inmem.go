@@ -7,8 +7,8 @@ import (
 )
 
 var (
-	AlreadyExistsError = errors.New("route already exists")
-	NotFoundError      = errors.New("route not found")
+	ErrorAlreadyExists = errors.New("route already exists")
+	ErrorNotFound      = errors.New("route not found")
 )
 
 // MemoryRepo implements the repository interface. All data will be stored in the memory.
@@ -25,11 +25,11 @@ func NewInMemRepo() *MemoryRepo {
 	}
 }
 
-// CreateRoute stores a new route in the repository.routes. If route already exists it returns an AlreadyExistsError.
+// CreateRoute stores a new route in the repository.routes. If route already exists it returns an ErrorAlreadyExists.
 func (m *MemoryRepo) CreateRoute(ctx context.Context, r *Route) error {
 	m.mtx.RLock()
 	if _, ok := m.routes[r.NameID]; ok {
-		return AlreadyExistsError
+		return ErrorAlreadyExists
 		m.mtx.RUnlock()
 	}
 	m.mtx.RUnlock()
@@ -40,11 +40,11 @@ func (m *MemoryRepo) CreateRoute(ctx context.Context, r *Route) error {
 	return nil
 }
 
-// UpdateRoute with the given route in the repository.routes. If the given route does not exists it returns an NotFoundError.
+// UpdateRoute with the given route in the repository.routes. If the given route does not exists it returns an ErrorNotFound.
 func (m *MemoryRepo) UpdateRoute(ctx context.Context, r *Route) error {
 	m.mtx.RLock()
 	if _, ok := m.routes[r.NameID]; !ok {
-		return NotFoundError
+		return ErrorNotFound
 		m.mtx.RUnlock()
 	}
 	m.mtx.RUnlock()
@@ -55,11 +55,11 @@ func (m *MemoryRepo) UpdateRoute(ctx context.Context, r *Route) error {
 	return nil
 }
 
-// DeleteRoute with the given entity.id in the repository.routes. If the given route does not exists it returns an NotFoundError.
+// DeleteRoute with the given entity.id in the repository.routes. If the given route does not exists it returns an ErrorNotFound.
 func (m *MemoryRepo) DeleteRoute(_ context.Context, id NameID) error {
 	m.mtx.RLock()
 	if _, ok := m.routes[id]; !ok {
-		return NotFoundError
+		return ErrorNotFound
 		m.mtx.RUnlock()
 	}
 	m.mtx.RUnlock()
