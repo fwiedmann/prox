@@ -102,10 +102,10 @@ func hasDuplicates(routes []*route.Route) bool {
 			if r1.NameID == r2.NameID {
 				count++
 			}
-			if count > 1 {
-				hasDuplicates = true
-				duplicates[string(r1.NameID)] = count
-			}
+		}
+		if count > 1 {
+			hasDuplicates = true
+			duplicates[string(r1.NameID)] = count
 		}
 	}
 	if hasDuplicates {
