@@ -18,14 +18,8 @@ var (
 
 // Static
 type Static struct {
-	Ports    []Port `yaml:"ports"`
-	Cache    Cache  `yaml:"cache"`
-	TLSCerts []TLS  `yaml:"tls"`
-}
-
-type TLS struct {
-	Cert string `yaml:"cert"`
-	Key  string `yaml:"key"`
+	Ports []Port `yaml:"ports"`
+	Cache Cache  `yaml:"cache"`
 }
 
 // Port
