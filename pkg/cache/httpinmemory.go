@@ -15,6 +15,8 @@ type response struct {
 	body          []byte
 	contentLength int64
 	header        http.Header
+	statusCode    int
+	status        string
 }
 
 const megaBytesToBytesMultiplier = 1e+6
@@ -52,6 +54,8 @@ func (hc *HTTPInMemoryCache) Get(route route.Route, request *http.Request) *http
 			Body:          ioutil.NopCloser(bytes.NewBuffer(val.body)),
 			ContentLength: val.contentLength,
 			Header:        val.header,
+			StatusCode:    val.statusCode,
+			Status:        val.status,
 		}
 	}
 	return nil
@@ -79,6 +83,8 @@ func (hc *HTTPInMemoryCache) Save(route route.Route, request *http.Request, resp
 		body:          body,
 		contentLength: resp.ContentLength,
 		header:        resp.Header,
+		statusCode:    resp.StatusCode,
+		status:        resp.Status,
 	}
 
 	if resp.ContentLength > 0 {

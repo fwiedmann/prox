@@ -48,7 +48,7 @@ func TestHTTPInMemoryCache_Get(t *testing.T) {
 		{
 			name: "ValidReturn",
 			fields: fields{
-				store:               map[string]response{"test-route-test.com-/hello": {contentLength: 1, header: map[string][]string{httpnMemoryCacheHeader: {"true"}}}},
+				store:               map[string]response{"test-route-test.com-/hello": {contentLength: 1, header: map[string][]string{httpInMemoryCacheHeader: {"true"}}}},
 				mtx:                 sync.RWMutex{},
 				maxCacheSizeInBytes: 0,
 				cacheSizeInBytes:    2,
@@ -79,7 +79,7 @@ func TestHTTPInMemoryCache_Get(t *testing.T) {
 			}
 
 			if got != nil {
-				if got.Header.Get(httpnMemoryCacheHeader) == "" {
+				if got.Header.Get(httpInMemoryCacheHeader) == "" {
 					t.Error("Get() did not set the cache header")
 				}
 
