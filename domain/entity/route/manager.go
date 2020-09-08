@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 	"regexp"
 	"time"
 )
@@ -18,6 +19,7 @@ var (
 	ErrorInvalidHostName                 = errors.New(fmt.Sprintf("hostname is invalid. Used expression: %s", hostNameRegexp.String()))
 	ErrorInvalidCacheTimeOutDuration     = errors.New("invalid cache time out duration format")
 	ErrorInvalidUpstreamTimeOutDuration  = errors.New("invalid upstream time out duration format")
+	ErrorInvalidUpstreamHost             = errors.New("invalid upstream host")
 
 	hostNameRegexp = regexp.MustCompile("^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])(\\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9]))*$")
 	pathRegexp     = regexp.MustCompile("(\\/[0-9].*\\?|$)")
@@ -79,6 +81,10 @@ func (m *manager) CreateRoute(ctx context.Context, r *Route) error {
 		return err
 	}
 
+	if err := parseUpstreamURL(r); err != nil {
+		return err
+	}
+
 	parseCacheMaxBodySize(r)
 
 	if err := validateRouteRequestIdentifiers(r); err != nil {
@@ -115,6 +121,14 @@ func parseDurations(r *Route) error {
 		return ErrorInvalidUpstreamTimeOutDuration
 	}
 	r.upstreamTimeoutDuration = upstreamTimeOut
+	return nil
+}
+func parseUpstreamURL(r *Route) error {
+	parsedUrl, err := url.Parse(r.UpstreamURL)
+	if err != nil {
+		return fmt.Errorf("%w: %s", ErrorInvalidHostName, err)
+	}
+	r.upstreamURL = parsedUrl
 	return nil
 }
 

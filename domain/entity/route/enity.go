@@ -16,14 +16,14 @@ type NameID string
 // RequestIdentifier defines the validation query parameters which can be used to decide if incoming requests match with the Route.
 type RequestIdentifier string
 
-// Route entity contains all information of an router Router which can be used to configure proxy requests.
+// Route entity contains all information of an proxy Router which can be used to configure proxy requests.
 type Route struct {
 	NameID                      NameID
 	CacheEnabled                bool
 	CacheTimeOutDuration        string
 	CacheMaxBodySizeInMegaBytes int64
 	CacheAllowedContentTypes    []string
-	UpstreamURL                 *url.URL
+	UpstreamURL                 string
 	UpstreamTimeoutDuration     string
 	UpstreamTLSValidation       bool
 	Priority                    uint
@@ -40,6 +40,12 @@ type Route struct {
 	cacheTimeOutDuration        time.Duration
 	upstreamTimeoutDuration     time.Duration
 	cacheMaxBodySizeInBytes     int64
+	upstreamURL                 *url.URL
+}
+
+// GetUpstreamURL for the proxy request
+func (r *Route) GetUpstreamURL() *url.URL {
+	return r.upstreamURL
 }
 
 // GetCacheMaxBodySizeInBytes return a validated bytes size
