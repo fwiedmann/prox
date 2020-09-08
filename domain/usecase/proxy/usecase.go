@@ -229,7 +229,7 @@ func isRespIsBuffered(transferEncoding []string) bool {
 	return false
 }
 
-// CreateHTTPClientForRoute configure a *http.Client based on a routes configuration
+// CreateHTTPClientForRoute configure a *http.Client based on a routes configure
 func CreateHTTPClientForRoute(r *route.Route) *http.Client {
 	return &http.Client{
 		Transport: &http.Transport{

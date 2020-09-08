@@ -1,0 +1,118 @@
+package root
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"github.com/fwiedmann/prox/internal/config"
+
+	log "github.com/sirupsen/logrus"
+
+	"github.com/fwiedmann/prox/pkg/cache"
+
+	nested "github.com/antonfisher/nested-logrus-formatter"
+	"github.com/fwiedmann/prox/domain/entity/route"
+	"github.com/fwiedmann/prox/domain/usecase/configure"
+	"github.com/fwiedmann/prox/domain/usecase/proxy"
+	"github.com/spf13/cobra"
+)
+
+func init() {
+	rootCmd.PersistentFlags().StringVar(&staticConfigFile, "static-config", "static.yaml", "Path to static config file")
+	rootCmd.PersistentFlags().StringVar(&routesConfigFile, "routes-config", "routes.yaml", "Path to routes config file")
+	rootCmd.Flags().String("loglevel", "info", "Set a log level")
+
+}
+
+var staticConfigFile string
+var routesConfigFile string
+
+var rootCmd = cobra.Command{
+	Use:          "prox",
+	Short:        "",
+	SilenceUsage: true,
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		cmdLogLevel, err := cmd.Flags().GetString("loglevel")
+		if err != nil {
+			return err
+		}
+		parsedLevel, err := log.ParseLevel(cmdLogLevel)
+		if err != nil {
+			return err
+		}
+
+		log.SetLevel(parsedLevel)
+		log.SetFormatter(&log.TextFormatter{ForceColors: true})
+		log.SetFormatter(&nested.Formatter{
+			HideKeys: true,
+		})
+		return nil
+	},
+	RunE: func(cmd *cobra.Command, args []string) error {
+
+		staticConfig, err := config.ParseStaticFile(staticConfigFile)
+		if err != nil {
+			return err
+		}
+
+		manager := route.NewManager(route.NewInMemRepo())
+		c := configure.NewFileConfigureUseCase(routesConfigFile, manager)
+
+		configErr := make(chan error, 1)
+		ctx, cancel := context.WithCancel(context.Background())
+		go c.StartConfigure(ctx, configErr)
+
+		proxyErrorChan := make(chan error, len(staticConfig.Ports))
+
+		for _, port := range staticConfig.Ports {
+			go func(p config.Port) {
+				px, err := proxy.NewUseCase(manager, configureCache(staticConfig.Cache.Enabled, staticConfig.Cache.CacheMaxSizeInMegaByte), p.Addr, proxy.CreateHTTPClientForRoute)
+				if err != nil {
+					proxyErrorChan <- err
+					return
+				}
+
+				s := http.Server{
+					Addr:    fmt.Sprintf(":%d", p.Addr),
+					Handler: px,
+				}
+				proxyErrorChan <- s.ListenAndServe()
+			}(port)
+		}
+
+		osNotifyChan := initOSNotifyChan()
+
+		select {
+		case err := <-configErr:
+			return err
+		case err := <-proxyErrorChan:
+			return err
+		case osSignal := <-osNotifyChan:
+			log.Warnf("received os %s signal, start  graceful shutdown of prox...", osSignal.String())
+			cancel()
+			return nil
+		}
+	},
+}
+
+func initOSNotifyChan() <-chan os.Signal {
+	notifyChan := make(chan os.Signal, 3)
+	signal.Notify(notifyChan, syscall.SIGTERM, syscall.SIGINT)
+	return notifyChan
+}
+
+// Execute executes the rootCmd
+func Execute() error {
+	return rootCmd.Execute()
+}
+
+func configureCache(enabled bool, maxSize int64) proxy.Cache {
+	if enabled {
+		return cache.NewHTTPInMemoryCache(maxSize)
+	}
+	return cache.Empty{}
+}
