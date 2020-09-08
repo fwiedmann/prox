@@ -18,29 +18,29 @@ type RequestIdentifier string
 
 // Route entity contains all information of an proxy Router which can be used to configure proxy requests.
 type Route struct {
-	NameID                      NameID
-	CacheEnabled                bool
-	CacheTimeOutDuration        string
-	CacheMaxBodySizeInMegaBytes int64
-	CacheAllowedContentTypes    []string
-	UpstreamURL                 string
-	UpstreamTimeoutDuration     string
-	UpstreamTLSValidation       bool
-	Priority                    uint
-	Port                        uint16
-	Hostname                    RequestIdentifier
-	HostnameRegexp              RequestIdentifier
-	Path                        RequestIdentifier
-	PathRegexp                  RequestIdentifier
-	ClientRequestModifiers      []Middleware
-	UpstreamModifiers           []func(r *http.Request) error
-	DownstreamModifiers         []func(w http.ResponseWriter, response *http.Response) error
-	hostMatch                   *regexp.Regexp
-	pathMatch                   *regexp.Regexp
-	cacheTimeOutDuration        time.Duration
-	upstreamTimeoutDuration     time.Duration
-	cacheMaxBodySizeInBytes     int64
-	upstreamURL                 *url.URL
+	NameID                      NameID                                                       `yaml:"name"`
+	CacheEnabled                bool                                                         `yaml:"cache-enabled"`
+	CacheTimeOutDuration        string                                                       `yaml:"cache-timeout"`
+	CacheMaxBodySizeInMegaBytes int64                                                        `yaml:"cache-max-body-size-in-mb"`
+	CacheAllowedContentTypes    []string                                                     `yaml:"cache-allowed-content-types"`
+	UpstreamURL                 string                                                       `yaml:"upstream-url"`
+	UpstreamTimeoutDuration     string                                                       `yaml:"upstream-timeout"`
+	UpstreamTLSValidation       bool                                                         `yaml:"upstream-skip-tls"`
+	Priority                    uint                                                         `yaml:"priority"`
+	Port                        uint16                                                       `yaml:"port"`
+	Hostname                    RequestIdentifier                                            `yaml:"hostname"`
+	HostnameRegexp              RequestIdentifier                                            `yaml:"hostname-regx"`
+	Path                        RequestIdentifier                                            `yaml:"path"`
+	PathRegexp                  RequestIdentifier                                            `yaml:"path-regx"`
+	ClientRequestModifiers      []Middleware                                                 `yaml:"-"`
+	UpstreamModifiers           []func(r *http.Request) error                                `yaml:"-"`
+	DownstreamModifiers         []func(w http.ResponseWriter, response *http.Response) error `yaml:"-"`
+	hostMatch                   *regexp.Regexp                                               `yaml:"-"`
+	pathMatch                   *regexp.Regexp                                               `yaml:"-"`
+	cacheTimeOutDuration        time.Duration                                                `yaml:"-"`
+	upstreamTimeoutDuration     time.Duration                                                `yaml:"-"`
+	cacheMaxBodySizeInBytes     int64                                                        `yaml:"-"`
+	upstreamURL                 *url.URL                                                     `yaml:"-"`
 }
 
 // GetUpstreamURL for the proxy request
