@@ -29,8 +29,8 @@ func NewInMemRepo() *MemoryRepo {
 func (m *MemoryRepo) CreateRoute(ctx context.Context, r *Route) error {
 	m.mtx.RLock()
 	if _, ok := m.routes[r.NameID]; ok {
-		return ErrorAlreadyExists
 		m.mtx.RUnlock()
+		return ErrorAlreadyExists
 	}
 	m.mtx.RUnlock()
 
@@ -44,8 +44,8 @@ func (m *MemoryRepo) CreateRoute(ctx context.Context, r *Route) error {
 func (m *MemoryRepo) UpdateRoute(ctx context.Context, r *Route) error {
 	m.mtx.RLock()
 	if _, ok := m.routes[r.NameID]; !ok {
-		return ErrorNotFound
 		m.mtx.RUnlock()
+		return ErrorNotFound
 	}
 	m.mtx.RUnlock()
 
@@ -59,8 +59,8 @@ func (m *MemoryRepo) UpdateRoute(ctx context.Context, r *Route) error {
 func (m *MemoryRepo) DeleteRoute(_ context.Context, id NameID) error {
 	m.mtx.RLock()
 	if _, ok := m.routes[id]; !ok {
-		return ErrorNotFound
 		m.mtx.RUnlock()
+		return ErrorNotFound
 	}
 	m.mtx.RUnlock()
 
