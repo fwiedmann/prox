@@ -29,42 +29,44 @@ type Cache interface {
 	Save(route route.Route, request *http.Request, response *http.Response)
 }
 
-type useCase struct {
-	routerManager route.Manager
-	cache         Cache
-	port          uint16
+type httpProxyUseCase struct {
+	routerManager    route.Manager
+	cache            Cache
+	port             uint16
+	createHTTPClient func(route *route.Route) *http.Client
 }
 
 // NewUseCase creates a new proxy UseCase
-func NewUseCase(manager route.Manager, cache Cache, port uint16) (UseCase, error) {
+func NewUseCase(manager route.Manager, cache Cache, port uint16, createHTTPClient func(route *route.Route) *http.Client) (UseCase, error) {
 	if reflect.ValueOf(cache).Kind() == reflect.Ptr && reflect.ValueOf(cache).IsNil() {
 		return nil, ErrInvalidCacheInterfaceValue
 	}
 
-	return &useCase{
-		routerManager: manager,
-		cache:         cache,
-		port:          port,
+	return &httpProxyUseCase{
+		routerManager:    manager,
+		cache:            cache,
+		port:             port,
+		createHTTPClient: createHTTPClient,
 	}, nil
 }
 
 // ServeHTTP is the entrypoint for each incoming proxy request
-func (u *useCase) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
+func (u *httpProxyUseCase) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	route, err := u.getRouteForRequest(r)
 	if err != nil {
 		http.Error(rw, ErrorStatusNotFound.Error(), http.StatusNotFound)
 		return
 	}
-	chainMiddlewares(rootHandler{route: route, cache: u.cache}.ServeHTTP, route.ClientRequestModifiers...).ServeHTTP(rw, r)
+	chainMiddlewares(rootHandler{route: *route, cache: u.cache, Client: u.createHTTPClient(route)}.ServeHTTP, route.ClientRequestModifiers...).ServeHTTP(rw, r)
 }
 
-func (u *useCase) getRouteForRequest(r *http.Request) (route.Route, error) {
+func (u *httpProxyUseCase) getRouteForRequest(r *http.Request) (*route.Route, error) {
 	routes, err := u.routerManager.ListRoutes(r.Context())
 	if err != nil {
-		return route.Route{}, err
+		return nil, err
 	}
 
-	routeMatches := make([]route.Route, 0)
+	routeMatches := make([]*route.Route, 0)
 
 	for _, route := range routes {
 		host, _, err := net.SplitHostPort(r.Host)
@@ -74,12 +76,12 @@ func (u *useCase) getRouteForRequest(r *http.Request) (route.Route, error) {
 		}
 
 		if u.isRouteValidForRequest(route, host, r.RequestURI) {
-			routeMatches = append(routeMatches, *route)
+			routeMatches = append(routeMatches, route)
 		}
 	}
 
 	if len(routeMatches) == 0 {
-		return route.Route{}, ErrorNoMatchingRoute
+		return nil, ErrorNoMatchingRoute
 	}
 
 	sort.SliceStable(routeMatches, func(i, j int) bool {
@@ -89,7 +91,7 @@ func (u *useCase) getRouteForRequest(r *http.Request) (route.Route, error) {
 	return routeMatches[0], nil
 }
 
-func (u *useCase) isRouteValidForRequest(r *route.Route, host, path string) bool {
+func (u *httpProxyUseCase) isRouteValidForRequest(r *route.Route, host, path string) bool {
 	if u.port != r.Port {
 		return false
 	}
@@ -99,11 +101,11 @@ func (u *useCase) isRouteValidForRequest(r *route.Route, host, path string) bool
 type rootHandler struct {
 	route route.Route
 	cache Cache
+	*http.Client
 }
 
 // ServeHTTP is the main proxy handler
 func (rh rootHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
-
 	var resp *http.Response
 	if rh.route.CacheEnabled {
 		resp = rh.cache.Get(rh.route, r)
@@ -121,10 +123,10 @@ func (rh rootHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		configureRequestForUpstream(requestCopy, rh.route)
 
 		var respErr error
-		resp, respErr = configureHTTPClientForRoute(rh.route).Do(requestCopy)
+		resp, respErr = rh.Do(requestCopy)
 		if respErr != nil {
 			http.Error(rw, respErr.Error(), http.StatusInternalServerError)
-			log.Errorf("upstream request error for route \"%s\" error: %s", rh.route.NameID, resp)
+			log.Errorf("upstream request error for route \"%s\" error: %v", rh.route.NameID, resp)
 			return
 		}
 		defer resp.Body.Close()
@@ -146,6 +148,8 @@ func (rh rootHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	if isRespIsBuffered(resp.TransferEncoding) {
 		go flushResponse(stopChan, rw)
 	}
+
+	rw.WriteHeader(resp.StatusCode)
 	io.Copy(rw, resp.Body)
 	close(stopChan)
 }
@@ -175,9 +179,9 @@ func applyDownstreamModifiers(ctx context.Context, w http.ResponseWriter, respon
 }
 
 func configureRequestForUpstream(request *http.Request, route route.Route) {
-	request.Host = route.UpstreamURL.Host
-	request.URL.Host = route.UpstreamURL.Host
-	request.URL.Scheme = route.UpstreamURL.Scheme
+	request.Host = route.GetUpstreamURL().Host
+	request.URL.Host = route.GetUpstreamURL().Host
+	request.URL.Scheme = route.GetUpstreamURL().Scheme
 	request.RequestURI = ""
 }
 
@@ -199,17 +203,6 @@ func chainMiddlewares(rootHandler http.HandlerFunc, middlewares ...route.Middlew
 		chain = middlewares[i](chain)
 	}
 	return chain
-}
-
-func configureHTTPClientForRoute(r route.Route) *http.Client {
-	return &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: r.UpstreamTLSValidation,
-			},
-		},
-		Timeout: r.GetUpstreamTimeout(),
-	}
 }
 
 func flushResponse(c <-chan struct{}, rw http.ResponseWriter) {
@@ -234,4 +227,16 @@ func isRespIsBuffered(transferEncoding []string) bool {
 		}
 	}
 	return false
+}
+
+// CreateHTTPClientForRoute configure a *http.Client based on a routes configuration
+func CreateHTTPClientForRoute(r *route.Route) *http.Client {
+	return &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: r.UpstreamTLSValidation,
+			},
+		},
+		Timeout: r.GetUpstreamTimeout(),
+	}
 }
