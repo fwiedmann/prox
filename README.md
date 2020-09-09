@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://github.com/fwiedmann/differ">
-    <img src="images/prox.png" width=100 height=100>
+    <img src="image/prox.png" width=100 height=100>
   </a>
 
   <h3 align="center">prox</h3>
