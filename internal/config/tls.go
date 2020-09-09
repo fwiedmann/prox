@@ -63,6 +63,7 @@ func (t *TLS) StartWatch(ctx context.Context, errChan chan<- error) {
 	if err := yaml.Unmarshal(file, &pairs); err != nil {
 		errChan <- err
 	}
+	log.Debugf("Parsed tls config file \"%s\": %+v", t.configFile, pairs)
 
 	t.deleteStalePairs(pairs)
 	t.startPairWatchers(ctx, pairs)

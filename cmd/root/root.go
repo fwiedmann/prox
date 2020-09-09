@@ -90,9 +90,11 @@ var rootCmd = cobra.Command{
 
 				if p.TlSEnabled {
 					s.TLSConfig = &tls.Config{GetCertificate: tlsConf.GetCertificate}
+					log.Debugf("Starting https endpoint on port %d", p.Addr)
 					proxyErrorChan <- s.ListenAndServeTLS("", "")
 					return
 				}
+				log.Debugf("Starting http endpoint on port %d", p.Addr)
 				proxyErrorChan <- s.ListenAndServe()
 			}(port)
 		}

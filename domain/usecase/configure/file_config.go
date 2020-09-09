@@ -53,6 +53,8 @@ func (f *file) StartConfigure(ctx context.Context, errChan chan<- error) {
 		return
 	}
 
+	log.Debugf("Parsed routes config file \"%s\": %v", f.pathToFile, routes)
+
 	if !hasDuplicates(routes) {
 		for _, r := range routes {
 			if err := f.routeManager.CreateRoute(ctx, r); err != nil {

@@ -56,6 +56,7 @@ func ParseStaticFile(path string) (Static, error) {
 	if err := yaml.Unmarshal(content, &config); err != nil {
 		return Static{}, err
 	}
+	log.Debugf("Parsed static config file \"%s\": %+v", path, config)
 
 	if hasDuplicates(config.Ports) {
 		return Static{}, ErrorDuplicatedPortConfiguration

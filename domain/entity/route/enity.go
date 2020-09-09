@@ -1,6 +1,7 @@
 package route
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -49,6 +50,11 @@ type Route struct {
 	upstreamTimeoutDuration     time.Duration                                                `yaml:"-"`
 	cacheMaxBodySizeInBytes     int64                                                        `yaml:"-"`
 	upstreamURL                 *url.URL                                                     `yaml:"-"`
+}
+
+// String implements Stringer interface
+func (r *Route) String() string {
+	return fmt.Sprintf("%v", *r)
 }
 
 // GetClientRequestModifiers for the proxy request
