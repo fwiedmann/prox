@@ -17,7 +17,7 @@
 - HTTP Proxy
 - In-Memory Cache
 - Dynamic Route reload
-- Dynamic Route reload
+- Dynamic TLS reload
 - Health Endpoint
 - Metrics
 - Middlewares:
@@ -55,18 +55,18 @@ Flags:
 The static configuration will initial configure `prox`.
 
 ```yaml
-access-log-enabled: true # optional,default false
-infra-port: 9100 # optional,default 9100
+access-log-enabled: true # optional, default false
+infra-port: 9100 # optional, default 9100
 cache:
-  enabled: true # optional,default false
-  cache-max-size-in-mega-byte: 10000  # optional,default -1 which means infinite
+  enabled: true # optional, default false
+  cache-max-size-in-mega-byte: 10000  # optional, default -1 which means infinite
 ports:
   - name: "http" # required
     port: 80 # required
-    tls: false # optional,default false
+    tls: false # optional, default false
   - name: "https"
     port: 443
-    tls: true # optional,default false
+    tls: true # optional, default false
 ```
 
 ### Dynamic Route Configuration
