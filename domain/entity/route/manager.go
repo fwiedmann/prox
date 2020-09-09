@@ -194,6 +194,8 @@ func parseMiddlewares(r *Route) error {
 	if r.Middlewares.ForwardHostHeader {
 		r.upstreamModifiers = append(r.upstreamModifiers, modifiers.ForwardHost)
 	}
+
+	r.downstreamModifiers = append(r.downstreamModifiers, modifiers.SetProxyHTTPHeader)
 	return nil
 }
 

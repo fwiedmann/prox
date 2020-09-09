@@ -132,18 +132,17 @@ func (rh rootHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		}
 		defer resp.Body.Close()
 
-		if err := applyDownstreamModifiers(r.Context(), rw, resp, rh.route); err != nil {
-			http.Error(rw, ErrorStatusInternalServerError.Error(), http.StatusInternalServerError)
-			log.Errorf("could not down upstream request modifiers for route \"%s\" error: %s", rh.route.NameID, err)
-			return
-		}
-
 		if rh.route.CacheEnabled {
 			rh.cache.Save(rh.route, r, resp)
 		}
 
 	}
 
+	if err := applyDownstreamModifiers(r.Context(), rw, resp, rh.route); err != nil {
+		http.Error(rw, ErrorStatusInternalServerError.Error(), http.StatusInternalServerError)
+		log.Errorf("could not down upstream request modifiers for route \"%s\" error: %s", rh.route.NameID, err)
+		return
+	}
 	configureHeadersForClientFromResponseHeaders(rw.Header(), resp.Header)
 
 	if isRespIsBuffered(resp.TransferEncoding) {
