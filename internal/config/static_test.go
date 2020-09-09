@@ -44,6 +44,7 @@ func TestParseStaticFile(t *testing.T) {
 					Enabled:                true,
 					CacheMaxSizeInMegaByte: 0,
 				},
+				InfraPort: 9100,
 			},
 			wantErr: false,
 		},

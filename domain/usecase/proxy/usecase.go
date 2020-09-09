@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fwiedmann/prox/internal/infra"
+
 	log "github.com/sirupsen/logrus"
 
 	"github.com/fwiedmann/prox/domain/entity/route"
@@ -149,6 +151,7 @@ func (rh rootHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		go flushResponse(stopChan, rw)
 	}
 
+	updateMetric(rh.route, resp)
 	rw.WriteHeader(resp.StatusCode)
 	io.Copy(rw, resp.Body)
 	close(stopChan)
@@ -239,4 +242,24 @@ func CreateHTTPClientForRoute(r *route.Route) *http.Client {
 		},
 		Timeout: r.GetUpstreamTimeout(),
 	}
+}
+
+func updateMetric(r route.Route, response *http.Response) {
+	if response.StatusCode < 200 {
+		infra.RouteStatusCode.With(map[string]string{"status_code": "1xx", "route": string(r.NameID)}).Inc()
+		return
+	}
+	if response.StatusCode < 300 {
+		infra.RouteStatusCode.With(map[string]string{"status_code": "2xx", "route": string(r.NameID)}).Inc()
+		return
+	}
+	if response.StatusCode < 400 {
+		infra.RouteStatusCode.With(map[string]string{"status_code": "3xx", "route": string(r.NameID)}).Inc()
+		return
+	}
+	if response.StatusCode < 500 {
+		infra.RouteStatusCode.With(map[string]string{"status_code": "4xx", "route": string(r.NameID)}).Inc()
+		return
+	}
+	infra.RouteStatusCode.With(map[string]string{"status_code": "5xx", "route": string(r.NameID)}).Inc()
 }

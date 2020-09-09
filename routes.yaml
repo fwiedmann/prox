@@ -2,7 +2,7 @@
   cache-enabled: true
   cache-timeout: "5m"
   cache-max-body-size-in-mb: 100
-  upstream-url: "https://felixwiedmann.de"
+  upstream-url: "https://docker.com"
   upstream-timeout: "20s"
   upstream-skip-tls: false
   priority: 3
@@ -16,7 +16,7 @@
   cache-enabled: true
   cache-timeout: "5m"
   cache-max-body-size-in-mb: 100
-  upstream-url: "https://felixwiedmann.de"
+  upstream-url: "https://docker.com"
   upstream-timeout: "20s"
   upstream-skip-tls: false
   priority: 3
@@ -26,3 +26,30 @@
     forward-host-header: true
     https-redirect-enabled: true
     https-redirect-port: 443
+
+- name: "test-route-http-backend"
+  cache-enabled: true
+  cache-timeout: "5m"
+  cache-max-body-size-in-mb: 100
+  upstream-url: "http://backend:80"
+  upstream-timeout: "20s"
+  upstream-skip-tls: false
+  priority: 3
+  port: 80
+  hostname: "backend.localhost"
+  middlewares:
+    https-redirect-enabled: true
+    https-redirect-port: 443
+
+- name: "test-route-https-backend"
+  cache-enabled: true
+  cache-timeout: "5m"
+  cache-max-body-size-in-mb: 100
+  upstream-url: "http://backend:80"
+  upstream-timeout: "20s"
+  upstream-skip-tls: false
+  priority: 3
+  port: 443
+  hostname: "backend.localhost"
+  middlewares:
+    forward-host-header: true

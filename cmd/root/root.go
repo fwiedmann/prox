@@ -9,6 +9,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/fwiedmann/prox/internal/infra"
+
 	"github.com/fwiedmann/prox/internal/config"
 
 	log "github.com/sirupsen/logrus"
@@ -98,6 +100,10 @@ var rootCmd = cobra.Command{
 				proxyErrorChan <- s.ListenAndServe()
 			}(port)
 		}
+
+		go func() {
+			proxyErrorChan <- infra.StartInfraHTTPEndpoint(int(staticConfig.InfraPort))
+		}()
 
 		osNotifyChan := initOSNotifyChan()
 

@@ -21,6 +21,7 @@ type Static struct {
 	Ports            []Port `yaml:"ports"`
 	Cache            Cache  `yaml:"cache"`
 	AccessLogEnabled bool   `yaml:"access-log-enabled"`
+	InfraPort        uint16 `yaml:"infra-port"`
 }
 
 // Port
@@ -58,21 +59,31 @@ func ParseStaticFile(path string) (Static, error) {
 	}
 	log.Debugf("Parsed static config file \"%s\": %+v", path, config)
 
-	if hasDuplicates(config.Ports) {
+	if config.InfraPort == 0 {
+		config.InfraPort = 9100
+	}
+
+	if hasDuplicates(config.Ports, config.InfraPort) {
 		return Static{}, ErrorDuplicatedPortConfiguration
 	}
 	return config, nil
 }
 
-func hasDuplicates(ports []Port) bool {
+func hasDuplicates(ports []Port, infraPort uint16) bool {
 	var hasDuplicatePortsAddr bool
 	var hasDuplicatesNames bool
+	var hasDuplicatesWithInfraPort bool
 	duplicatesAddr := make(map[string]int)
 	duplicatesNames := make(map[string]int)
 
 	for _, p1 := range ports {
 		countPortAddr := 0
 		countNames := 0
+
+		if p1.Addr == infraPort {
+			hasDuplicatesWithInfraPort = true
+			log.Errorf("static port configuration \"%s\" has the same port as the infra port on %d", p1.Name, infraPort)
+		}
 		for _, p2 := range ports {
 			if p1.Addr == p2.Addr {
 				countPortAddr++
@@ -104,5 +115,6 @@ func hasDuplicates(ports []Port) bool {
 			log.Errorf("port-name: \"%s\", count: %d", key, val)
 		}
 	}
-	return hasDuplicatePortsAddr || hasDuplicatesNames
+
+	return hasDuplicatePortsAddr || hasDuplicatesNames || hasDuplicatesWithInfraPort
 }

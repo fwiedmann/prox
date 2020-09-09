@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/fwiedmann/prox/internal/infra"
+
 	"github.com/fwiedmann/prox/domain/entity/route"
 )
 
@@ -25,6 +27,7 @@ const httpContentTypeHeader = "Content-Type"
 
 // NewHTTPInMemoryCache creates a new http cache which stores http responses in memory
 func NewHTTPInMemoryCache(maxCacheSizeInMegaBytes int64) *HTTPInMemoryCache {
+	infra.HTTPInMemCacheMaxSizeInBytes.Set(float64(maxCacheSizeInMegaBytes))
 	return &HTTPInMemoryCache{
 		store:               make(map[string]response),
 		maxCacheSizeInBytes: maxCacheSizeInMegaBytes * megaBytesToBytesMultiplier,
@@ -89,6 +92,7 @@ func (hc *HTTPInMemoryCache) Save(route route.Route, request *http.Request, resp
 
 	if resp.ContentLength > 0 {
 		hc.cacheSizeInBytes += resp.ContentLength
+		infra.HTTPInMemCacheCurrentSizeInBytes.Set(float64(hc.cacheSizeInBytes))
 	}
 
 	go hc.deleteStoredResponseAfterTimeout(id, route.GetCacheTimeOut())
@@ -123,6 +127,7 @@ func (hc *HTTPInMemoryCache) deleteStoredResponseAfterTimeout(id string, duratio
 	defer hc.mtx.Unlock()
 	hc.cacheSizeInBytes -= hc.store[id].contentLength
 	delete(hc.store, id)
+	infra.HTTPInMemCacheCurrentSizeInBytes.Set(float64(hc.cacheSizeInBytes))
 }
 
 func isValidResponseCode(code int) bool {

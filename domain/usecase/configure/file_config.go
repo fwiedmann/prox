@@ -56,6 +56,10 @@ func (f *file) StartConfigure(ctx context.Context, errChan chan<- error) {
 	log.Debugf("Parsed routes config file \"%s\": %v", f.pathToFile, routes)
 
 	if !hasDuplicates(routes) {
+		if err := f.deleteStaleRoutes(ctx, routes); err != nil {
+			log.Error(err)
+		}
+
 		for _, r := range routes {
 			if err := f.routeManager.CreateRoute(ctx, r); err != nil {
 				if !errors.Is(err, route.ErrorAlreadyExists) {
@@ -92,6 +96,26 @@ func (f *file) StartConfigure(ctx context.Context, errChan chan<- error) {
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
+}
+
+func (f *file) deleteStaleRoutes(ctx context.Context, routes []*route.Route) error {
+	storedRoutes, err := f.routeManager.ListRoutes(ctx)
+	if err != nil {
+		return err
+	}
+	for _, r1 := range storedRoutes {
+		var found bool
+		for _, r2 := range routes {
+			if r1.NameID == r2.NameID {
+				found = true
+			}
+		}
+		if !found {
+			f.routeManager.DeleteRoute(ctx, r1.NameID)
+		}
+	}
+
+	return nil
 }
 
 func hasDuplicates(routes []*route.Route) bool {

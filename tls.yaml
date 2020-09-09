@@ -1,2 +1,2 @@
-- certificate: "localhost.pem"
-  key: "localhost-key.pem"
+- certificate: "/certs/localhost.pem"
+  key: "/certs/localhost-key.pem"
