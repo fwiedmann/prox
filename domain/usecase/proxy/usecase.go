@@ -4,11 +4,12 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"reflect"
 	"sort"
+	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -30,14 +31,15 @@ type Cache interface {
 }
 
 type httpProxyUseCase struct {
-	routerManager    route.Manager
+	routerManager    route.Router
 	cache            Cache
 	port             uint16
 	createHTTPClient func(route *route.Route) *http.Client
+	accessLogEnabled bool
 }
 
 // NewUseCase creates a new proxy UseCase
-func NewUseCase(manager route.Manager, cache Cache, port uint16, createHTTPClient func(route *route.Route) *http.Client) (UseCase, error) {
+func NewUseCase(manager route.Router, cache Cache, port uint16, accessLogEnabled bool, createHTTPClient func(route *route.Route) *http.Client) (UseCase, error) {
 	if reflect.ValueOf(cache).Kind() == reflect.Ptr && reflect.ValueOf(cache).IsNil() {
 		return nil, ErrInvalidCacheInterfaceValue
 	}
@@ -46,18 +48,23 @@ func NewUseCase(manager route.Manager, cache Cache, port uint16, createHTTPClien
 		routerManager:    manager,
 		cache:            cache,
 		port:             port,
+		accessLogEnabled: accessLogEnabled,
 		createHTTPClient: createHTTPClient,
 	}, nil
 }
 
 // ServeHTTP is the entrypoint for each incoming proxy request
 func (u *httpProxyUseCase) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
+	if u.accessLogEnabled {
+		log.WithFields(log.Fields{"ACCESS LOG": fmt.Sprintf("ACCESS %d", u.port)}).Infof("%+v", *r)
+	}
+
 	route, err := u.getRouteForRequest(r)
 	if err != nil {
 		http.Error(rw, ErrorStatusNotFound.Error(), http.StatusNotFound)
 		return
 	}
-	chainMiddlewares(rootHandler{route: *route, cache: u.cache, Client: u.createHTTPClient(route)}.ServeHTTP, route.ClientRequestModifiers...).ServeHTTP(rw, r)
+	chainMiddlewares(rootHandler{route: *route, cache: u.cache, Client: u.createHTTPClient(route)}.ServeHTTP, route.GetClientRequestModifiers()...).ServeHTTP(rw, r)
 }
 
 func (u *httpProxyUseCase) getRouteForRequest(r *http.Request) (*route.Route, error) {
@@ -69,13 +76,7 @@ func (u *httpProxyUseCase) getRouteForRequest(r *http.Request) (*route.Route, er
 	routeMatches := make([]*route.Route, 0)
 
 	for _, route := range routes {
-		host, _, err := net.SplitHostPort(r.Host)
-		if err != nil {
-			log.Errorf("could not parse host for request %+v, error: %s", *r, err)
-			continue
-		}
-
-		if u.isRouteValidForRequest(route, host, r.RequestURI) {
+		if u.isRouteValidForRequest(route, strings.Split(r.Host, ":")[0], r.RequestURI) {
 			routeMatches = append(routeMatches, route)
 		}
 	}
@@ -155,7 +156,7 @@ func (rh rootHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 }
 
 func applyUpstreamModifiers(r *http.Request, route route.Route) error {
-	for _, modFunc := range route.UpstreamModifiers {
+	for _, modFunc := range route.GetUpstreamModifiers() {
 		if err := modFunc(r); err != nil {
 			return err
 		}
@@ -167,7 +168,7 @@ func applyUpstreamModifiers(r *http.Request, route route.Route) error {
 }
 
 func applyDownstreamModifiers(ctx context.Context, w http.ResponseWriter, response *http.Response, route route.Route) error {
-	for _, modFunc := range route.DownstreamModifiers {
+	for _, modFunc := range route.GetDownstreamModifiers() {
 		if err := modFunc(w, response); err != nil {
 			return err
 		}

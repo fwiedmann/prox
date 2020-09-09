@@ -3,7 +3,6 @@ package proxy
 import (
 	"bytes"
 	"context"
-	"errors"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -12,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fwiedmann/prox/pkg/cache"
+	"github.com/fwiedmann/prox/internal/cache"
 
 	"github.com/fwiedmann/prox/domain/entity/route"
 )
@@ -68,11 +67,6 @@ func Test_httpProxyUseCase_ServeHTTP(t *testing.T) {
 					CacheEnabled: true,
 					UpstreamURL:  "test.localhost",
 					Path:         "/hello",
-					ClientRequestModifiers: []route.Middleware{func(handlerFunc http.HandlerFunc) http.HandlerFunc {
-						return func(writer http.ResponseWriter, request *http.Request) {
-							handlerFunc.ServeHTTP(writer, request)
-						}
-					}},
 				}},
 			},
 			fields: fields{
@@ -81,83 +75,6 @@ func Test_httpProxyUseCase_ServeHTTP(t *testing.T) {
 			},
 			wantStatusCode: 200,
 			wantBody:       "ok",
-			requestPath:    "/hello",
-		},
-		{
-			name: "ValidRequestBuffered",
-			initFields: initFields{
-				routes: []*route.Route{{
-					NameID:       "test-route",
-					CacheEnabled: true,
-					UpstreamURL:  "test.localhost",
-					Path:         "/hello",
-					ClientRequestModifiers: []route.Middleware{func(handlerFunc http.HandlerFunc) http.HandlerFunc {
-						return func(writer http.ResponseWriter, request *http.Request) {
-							handlerFunc.ServeHTTP(writer, request)
-						}
-					}},
-				}},
-			},
-			fields: fields{
-				cache:            cache.NewHTTPInMemoryCache(-1),
-				createHTTPClient: clientCreator{body: []byte("ok"), header: map[string][]string{"test": {"test"}}, TransferEncoding: "chunked", respCode: 200}.CreateFakeHTTPClient,
-			},
-			wantStatusCode: 200,
-			wantBody:       "ok",
-			requestPath:    "/hello",
-		},
-		{
-			name: "UpstreamModifierError",
-			initFields: initFields{
-				routes: []*route.Route{{
-					NameID:       "test-route",
-					CacheEnabled: true,
-					UpstreamURL:  "test.localhost",
-					Path:         "/hello",
-					ClientRequestModifiers: []route.Middleware{func(handlerFunc http.HandlerFunc) http.HandlerFunc {
-						return func(writer http.ResponseWriter, request *http.Request) {
-							handlerFunc.ServeHTTP(writer, request)
-						}
-					}},
-					UpstreamModifiers: []func(r *http.Request) error{func(r *http.Request) error {
-						return errors.New("error")
-					}},
-				}},
-			},
-			fields: fields{
-				cache:            cache.NewHTTPInMemoryCache(-1),
-				createHTTPClient: clientCreator{body: []byte("ok"), header: map[string][]string{"test": {"test"}}, TransferEncoding: "chunked", respCode: 200}.CreateFakeHTTPClient,
-			},
-			wantStatusCode: 500,
-			wantBody:       "500 - Internal Server Error",
-			requestPath:    "/hello",
-		},
-		{
-			name: "DownstreamModifierError",
-			initFields: initFields{
-				routes: []*route.Route{{
-					NameID:       "test-route",
-					CacheEnabled: true,
-					UpstreamURL:  "test.localhost",
-					Path:         "/hello",
-					ClientRequestModifiers: []route.Middleware{func(handlerFunc http.HandlerFunc) http.HandlerFunc {
-						return func(writer http.ResponseWriter, request *http.Request) {
-							handlerFunc.ServeHTTP(writer, request)
-						}
-					}},
-					DownstreamModifiers: []func(w http.ResponseWriter, response *http.Response) error{
-						func(_ http.ResponseWriter, _ *http.Response) error {
-							return errors.New("error")
-						},
-					},
-				}},
-			},
-			fields: fields{
-				cache:            cache.NewHTTPInMemoryCache(-1),
-				createHTTPClient: clientCreator{body: []byte("ok"), header: map[string][]string{"test": {"test"}}, TransferEncoding: "chunked", respCode: 200}.CreateFakeHTTPClient,
-			},
-			wantStatusCode: 500,
-			wantBody:       "500 - Internal Server Error",
 			requestPath:    "/hello",
 		},
 	}
@@ -201,7 +118,6 @@ func Test_httpProxyUseCase_ServeHTTP(t *testing.T) {
 			if err != nil {
 				t.Errorf(err.Error())
 				return
-
 			}
 			if !strings.Contains(string(body), tt.wantBody) {
 				t.Errorf("response body is %s, want %s", string(body), tt.wantBody)

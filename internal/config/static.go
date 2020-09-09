@@ -18,8 +18,9 @@ var (
 
 // Static
 type Static struct {
-	Ports []Port `yaml:"ports"`
-	Cache Cache  `yaml:"cache"`
+	Ports            []Port `yaml:"ports"`
+	Cache            Cache  `yaml:"cache"`
+	AccessLogEnabled bool   `yaml:"access-log-enabled"`
 }
 
 // Port

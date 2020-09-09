@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/antonfisher/nested-logrus-formatter v1.2.0
+	github.com/ghodss/yaml v1.0.0
 	github.com/golang/mock v1.4.4
 	github.com/google/martian v2.1.0+incompatible // indirect
 	github.com/google/uuid v1.1.2

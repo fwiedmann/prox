@@ -2,6 +2,7 @@ package root
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"os"
@@ -12,7 +13,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/fwiedmann/prox/pkg/cache"
+	"github.com/fwiedmann/prox/internal/cache"
 
 	nested "github.com/antonfisher/nested-logrus-formatter"
 	"github.com/fwiedmann/prox/domain/entity/route"
@@ -24,12 +25,14 @@ import (
 func init() {
 	rootCmd.PersistentFlags().StringVar(&staticConfigFile, "static-config", "static.yaml", "Path to static config file")
 	rootCmd.PersistentFlags().StringVar(&routesConfigFile, "routes-config", "routes.yaml", "Path to routes config file")
+	rootCmd.PersistentFlags().StringVar(&tlsConfigFile, "tls-config", "tls.yaml", "Path to routes tls file")
 	rootCmd.Flags().String("loglevel", "info", "Set a log level")
 
 }
 
 var staticConfigFile string
 var routesConfigFile string
+var tlsConfigFile string
 
 var rootCmd = cobra.Command{
 	Use:          "prox",
@@ -62,15 +65,19 @@ var rootCmd = cobra.Command{
 		manager := route.NewManager(route.NewInMemRepo())
 		c := configure.NewFileConfigureUseCase(routesConfigFile, manager)
 
-		configErr := make(chan error, 1)
+		configErr := make(chan error, 2)
 		ctx, cancel := context.WithCancel(context.Background())
 		go c.StartConfigure(ctx, configErr)
+
+		tlsConf := config.NewDynamicTLSConfig(tlsConfigFile)
+
+		go tlsConf.StartWatch(ctx, configErr)
 
 		proxyErrorChan := make(chan error, len(staticConfig.Ports))
 
 		for _, port := range staticConfig.Ports {
 			go func(p config.Port) {
-				px, err := proxy.NewUseCase(manager, configureCache(staticConfig.Cache.Enabled, staticConfig.Cache.CacheMaxSizeInMegaByte), p.Addr, proxy.CreateHTTPClientForRoute)
+				px, err := proxy.NewUseCase(manager, configureCache(staticConfig.Cache.Enabled, staticConfig.Cache.CacheMaxSizeInMegaByte), p.Addr, staticConfig.AccessLogEnabled, proxy.CreateHTTPClientForRoute)
 				if err != nil {
 					proxyErrorChan <- err
 					return
@@ -79,6 +86,12 @@ var rootCmd = cobra.Command{
 				s := http.Server{
 					Addr:    fmt.Sprintf(":%d", p.Addr),
 					Handler: px,
+				}
+
+				if p.TlSEnabled {
+					s.TLSConfig = &tls.Config{GetCertificate: tlsConf.GetCertificate}
+					proxyErrorChan <- s.ListenAndServeTLS("", "")
+					return
 				}
 				proxyErrorChan <- s.ListenAndServe()
 			}(port)

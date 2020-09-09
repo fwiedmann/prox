@@ -6,15 +6,23 @@
   upstream-timeout: "20s"
   upstream-skip-tls: false
   priority: 3
-  port: 8080
+  port: 80
   hostname: "localhost"
-- name: "test-route2"
+  middlewares:
+    https-redirect-enabled: true
+    https-redirect-port: 443
+
+- name: "test-route-https"
   cache-enabled: true
   cache-timeout: "5m"
   cache-max-body-size-in-mb: 100
-  upstream-url: "https://docker.com"
+  upstream-url: "https://felixwiedmann.de"
   upstream-timeout: "20s"
   upstream-skip-tls: false
   priority: 3
-  port: 8081
-  hostname: "test.localhost"
+  port: 443
+  hostname: "localhost"
+  middlewares:
+    forward-host-header: true
+    https-redirect-enabled: true
+    https-redirect-port: 443

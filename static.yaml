@@ -1,15 +1,11 @@
-loglevel: "info"
+access-log-enabled: true
 cache:
   enabled: true
   cache-max-size-in-mega-byte: 10000
 ports:
-  - name: "web"
-    port: 8080
+  - name: "http"
+    port: 80
     tls: false
-  - name: "web-2"
-    port: 8081
+  - name: "https"
+    port: 443
     tls: true
-
-tls:
-  - cert: ""
-    key: ""

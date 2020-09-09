@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"regexp"
 	"time"
+
+	"github.com/fwiedmann/prox/internal/modifiers"
 )
 
 var (
@@ -95,6 +97,10 @@ func (m *manager) CreateRoute(ctx context.Context, r *Route) error {
 		return err
 	}
 
+	if err := parseMiddlewares(r); err != nil {
+		return err
+	}
+
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
@@ -172,6 +178,22 @@ func configureRouteRequestMatches(r *Route) error {
 	}
 	r.pathMatch = pathMatchRegexp
 
+	return nil
+}
+
+func parseMiddlewares(r *Route) error {
+
+	if r.Middlewares.HTTPSRedirect {
+		port := 443
+		if r.Middlewares.HTTPSRedirectPort != 0 {
+			port = r.Middlewares.HTTPSRedirectPort
+		}
+		r.clientRequestModifiers = append(r.clientRequestModifiers, modifiers.NewHTTPSRedirect(port).Redirect)
+	}
+
+	if r.Middlewares.ForwardHostHeader {
+		r.upstreamModifiers = append(r.upstreamModifiers, modifiers.ForwardHost)
+	}
 	return nil
 }
 

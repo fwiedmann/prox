@@ -16,6 +16,13 @@ type NameID string
 // RequestIdentifier defines the validation query parameters which can be used to decide if incoming requests match with the Route.
 type RequestIdentifier string
 
+// Middlewares
+type Middlewares struct {
+	HTTPSRedirect     bool `yaml:"https-redirect-enabled"`
+	HTTPSRedirectPort int  `yaml:"https-redirect-port"`
+	ForwardHostHeader bool `yaml:"forward-host-header"`
+}
+
 // Route entity contains all information of an proxy Router which can be used to configure proxy requests.
 type Route struct {
 	NameID                      NameID                                                       `yaml:"name"`
@@ -32,15 +39,31 @@ type Route struct {
 	HostnameRegexp              RequestIdentifier                                            `yaml:"hostname-regx"`
 	Path                        RequestIdentifier                                            `yaml:"path"`
 	PathRegexp                  RequestIdentifier                                            `yaml:"path-regx"`
-	ClientRequestModifiers      []Middleware                                                 `yaml:"-"`
-	UpstreamModifiers           []func(r *http.Request) error                                `yaml:"-"`
-	DownstreamModifiers         []func(w http.ResponseWriter, response *http.Response) error `yaml:"-"`
+	Middlewares                 Middlewares                                                  `yaml:"middlewares"`
+	clientRequestModifiers      []Middleware                                                 `yaml:"-"`
+	upstreamModifiers           []func(r *http.Request) error                                `yaml:"-"`
+	downstreamModifiers         []func(w http.ResponseWriter, response *http.Response) error `yaml:"-"`
 	hostMatch                   *regexp.Regexp                                               `yaml:"-"`
 	pathMatch                   *regexp.Regexp                                               `yaml:"-"`
 	cacheTimeOutDuration        time.Duration                                                `yaml:"-"`
 	upstreamTimeoutDuration     time.Duration                                                `yaml:"-"`
 	cacheMaxBodySizeInBytes     int64                                                        `yaml:"-"`
 	upstreamURL                 *url.URL                                                     `yaml:"-"`
+}
+
+// GetClientRequestModifiers for the proxy request
+func (r *Route) GetClientRequestModifiers() []Middleware {
+	return r.clientRequestModifiers
+}
+
+// GetUpstreamModifiers for the proxy request
+func (r *Route) GetUpstreamModifiers() []func(r *http.Request) error {
+	return r.upstreamModifiers
+}
+
+// GetDownstreamModifiers for the proxy request
+func (r *Route) GetDownstreamModifiers() []func(w http.ResponseWriter, response *http.Response) error {
+	return r.downstreamModifiers
 }
 
 // GetUpstreamURL for the proxy request

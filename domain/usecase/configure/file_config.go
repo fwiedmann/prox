@@ -18,7 +18,7 @@ var (
 	ErrorInvalidFileType = errors.New("given file type is invalid, only .yaml or yml is allowed")
 )
 
-func NewFileConfigureUseCase(f string, manager route.Manager) UseCase {
+func NewFileConfigureUseCase(f string, manager route.Configurator) UseCase {
 	return &file{
 		pathToFile:   f,
 		routeManager: manager,
@@ -27,7 +27,7 @@ func NewFileConfigureUseCase(f string, manager route.Manager) UseCase {
 
 type file struct {
 	pathToFile   string
-	routeManager route.Manager
+	routeManager route.Configurator
 }
 
 func (f *file) StartConfigure(ctx context.Context, errChan chan<- error) {
