@@ -8,14 +8,11 @@ test:
 	go test -coverprofile testcov -race ./...
 	rm testcov
 
-.PHONY: lint
-lint:
-	golangci-lint run
-
 .PHONY: run
 run:
-	sudo ./prox --static-config ./static.yaml --routes-config ./routes.yaml --tls-config ./tls.yaml
+	sudo ./prox --static-config ./static.yaml --routes-config ./routes.yaml --tls-config ./tls.yaml --loglevel debug
 
 .PHONY: docker
 docker:
 	docker build -t prox:dev .
+	docker-compose up

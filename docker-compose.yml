@@ -1,0 +1,22 @@
+version: "3"
+services:
+  prox:
+    image: prox:dev
+    container_name: prox
+    ports:
+    - 80:80
+    - 443:443
+    command: ["--static-config", "/config/static.yaml", "--routes-config", "/config/routes.yaml", "--tls-config", "/config/tls.yaml", "--loglevel", "debug"]
+    volumes:
+      - "./static.yaml:/config/static.yaml"
+      - "./routes.yaml:/config/routes.yaml"
+      - "./tls.yaml:/config/tls.yaml"
+      - "./localhost.pem:/certs/localhost.pem"
+      - "./localhost-key.pem:/certs/localhost-key.pem"
+    cap_add:
+      - NET_BIND_SERVICE
+  backend:
+    container_name: backend
+    image: containous/whoami
+    expose:
+      - 80
