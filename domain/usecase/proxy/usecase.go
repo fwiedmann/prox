@@ -123,6 +123,7 @@ func (rh rootHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		removeHopByHopHeaders(requestCopy.Header)
 		configureRequestForUpstream(requestCopy, rh.route)
 
 		var respErr error
@@ -133,6 +134,8 @@ func (rh rootHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 			return
 		}
 		defer resp.Body.Close()
+
+		removeHopByHopHeaders(resp.Header)
 
 		if rh.route.CacheEnabled {
 			rh.cache.Save(rh.route, r, resp)
@@ -262,4 +265,11 @@ func updateMetric(r route.Route, response *http.Response) {
 		return
 	}
 	infra.RouteStatusCode.With(map[string]string{"status_code": "5xx", "route": string(r.NameID)}).Inc()
+}
+
+func removeHopByHopHeaders(headers http.Header) {
+	for _, h := range strings.Split(headers.Get("Connection"), ",") {
+		headers.Del(strings.ReplaceAll(h, " ", ""))
+	}
+	headers.Del("Connection")
 }
