@@ -249,23 +249,18 @@ func CreateHTTPClientForRoute(r *route.Route) *http.Client {
 }
 
 func updateMetric(r route.Route, response *http.Response) {
-	if response.StatusCode < 200 {
+	switch code := response.StatusCode; {
+	case code < 200:
 		infra.RouteStatusCode.With(map[string]string{"status_code": "1xx", "route": string(r.NameID)}).Inc()
-		return
-	}
-	if response.StatusCode < 300 {
+	case code < 300:
 		infra.RouteStatusCode.With(map[string]string{"status_code": "2xx", "route": string(r.NameID)}).Inc()
-		return
-	}
-	if response.StatusCode < 400 {
+	case code < 400:
 		infra.RouteStatusCode.With(map[string]string{"status_code": "3xx", "route": string(r.NameID)}).Inc()
-		return
-	}
-	if response.StatusCode < 500 {
+	case code < 500:
 		infra.RouteStatusCode.With(map[string]string{"status_code": "4xx", "route": string(r.NameID)}).Inc()
-		return
+	default:
+		infra.RouteStatusCode.With(map[string]string{"status_code": "5xx", "route": string(r.NameID)}).Inc()
 	}
-	infra.RouteStatusCode.With(map[string]string{"status_code": "5xx", "route": string(r.NameID)}).Inc()
 }
 
 func removeHopByHopHeaders(headers http.Header) {

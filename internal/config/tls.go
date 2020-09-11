@@ -123,6 +123,9 @@ func (t *TLS) startWatchPair(ctx context.Context, pair Pair) {
 		if err != nil {
 			log.Error(err)
 			if errors.Is(err, os.ErrNotExist) {
+				t.mtx.Lock()
+				delete(t.certStore, pair.ID())
+				t.mtx.Unlock()
 				return
 			}
 		}
@@ -130,6 +133,9 @@ func (t *TLS) startWatchPair(ctx context.Context, pair Pair) {
 		if err != nil {
 			log.Error(err)
 			if errors.Is(err, os.ErrNotExist) {
+				t.mtx.Lock()
+				delete(t.certStore, pair.ID())
+				t.mtx.Unlock()
 				return
 			}
 		}
@@ -144,8 +150,8 @@ func (t *TLS) startWatchPair(ctx context.Context, pair Pair) {
 
 		t.mtx.RLock()
 		if _, ok := t.certStore[pair.ID()]; !ok {
-			return
 			t.mtx.RUnlock()
+			return
 		}
 		t.mtx.RUnlock()
 
@@ -153,7 +159,6 @@ func (t *TLS) startWatchPair(ctx context.Context, pair Pair) {
 			return
 		}
 		time.Sleep(10 * time.Millisecond)
-
 	}
 }
 
