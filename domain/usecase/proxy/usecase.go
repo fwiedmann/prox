@@ -24,6 +24,7 @@ var (
 	ErrorStatusNotFound            = errors.New("404 - Not Found")
 	ErrorStatusInternalServerError = errors.New("500 - Internal Server Error")
 	ErrInvalidCacheInterfaceValue  = errors.New("cache is not allowed to be nil or a pointer")
+	hopByHopHeaders                = []string{"Connection", "Keep-Alive", "Transfer-Encoding", "TE", "Trailer", "Upgrade", "Proxy-Authorization", "Proxy-Authenticate"}
 )
 
 // Cache defines a API for caching *http.Response
@@ -271,5 +272,7 @@ func removeHopByHopHeaders(headers http.Header) {
 	for _, h := range strings.Split(headers.Get("Connection"), ",") {
 		headers.Del(strings.ReplaceAll(h, " ", ""))
 	}
-	headers.Del("Connection")
+	for _, h := range hopByHopHeaders {
+		headers.Del(h)
+	}
 }
