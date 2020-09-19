@@ -51,11 +51,11 @@ func TestMemoryRepo_CreateRoute(t *testing.T) {
 			wantErr: true,
 		},
 	}
-	for _, tt := range tests {
+	for _, tt := range tests { //nolint
 		t.Run(tt.name, func(t *testing.T) {
 			m := &MemoryRepo{
 				routes: tt.fields.routes,
-				mtx:    tt.fields.mtx,
+				mtx:    tt.fields.mtx, //nolint
 			}
 
 			routeCountBeforeCreate := len(tt.fields.routes)
@@ -129,11 +129,11 @@ func TestMemoryRepo_UpdateRoute(t *testing.T) {
 			wantErr: true,
 		},
 	}
-	for _, tt := range tests {
+	for _, tt := range tests { //nolint
 		t.Run(tt.name, func(t *testing.T) {
 			m := &MemoryRepo{
 				routes: tt.fields.routes,
-				mtx:    tt.fields.mtx,
+				mtx:    tt.fields.mtx, //nolint
 			}
 
 			err := m.UpdateRoute(tt.args.ctx, &tt.args.r)
@@ -191,11 +191,11 @@ func TestMemoryRepo_DeleteRoute(t *testing.T) {
 			wantErr: true,
 		},
 	}
-	for _, tt := range tests {
+	for _, tt := range tests { //nolint
 		t.Run(tt.name, func(t *testing.T) {
 			m := &MemoryRepo{
 				routes: tt.fields.routes,
-				mtx:    tt.fields.mtx,
+				mtx:    tt.fields.mtx, //nolint
 			}
 			err := m.DeleteRoute(tt.args.ctx, tt.args.id)
 			if (err != nil) != tt.wantErr {
@@ -240,11 +240,11 @@ func TestMemoryRepo_ListRoutes(t *testing.T) {
 			wantErr: false,
 		},
 	}
-	for _, tt := range tests {
+	for _, tt := range tests { //nolint
 		t.Run(tt.name, func(t *testing.T) {
 			m := &MemoryRepo{
 				routes: tt.fields.routes,
-				mtx:    tt.fields.mtx,
+				mtx:    tt.fields.mtx, //nolint
 			}
 			got, err := m.ListRoutes(tt.args.ctx)
 			if (err != nil) != tt.wantErr {

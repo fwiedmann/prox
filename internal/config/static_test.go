@@ -99,7 +99,7 @@ func TestParseStaticFile(t *testing.T) {
 				return
 			}
 
-			if err := ioutil.WriteFile(testFile.Name(), body, 777); err != nil {
+			if err := ioutil.WriteFile(testFile.Name(), body, 0777); err != nil {
 				t.Error(err)
 				return
 			}

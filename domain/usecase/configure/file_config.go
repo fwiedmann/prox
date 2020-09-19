@@ -43,7 +43,7 @@ func (f *file) StartConfigure(ctx context.Context, errChan chan<- error) {
 		return
 	}
 
-	if !strings.HasSuffix(file.Name(), ".yaml") && !strings.HasSuffix(file.Name(), ".yaml") {
+	if !strings.HasSuffix(file.Name(), ".yaml") && !strings.HasSuffix(file.Name(), ".yml") {
 		errChan <- ErrorInvalidFileType
 	}
 
@@ -111,7 +111,7 @@ func (f *file) deleteStaleRoutes(ctx context.Context, routes []*route.Route) err
 			}
 		}
 		if !found {
-			f.routeManager.DeleteRoute(ctx, r1.NameID)
+			return f.routeManager.DeleteRoute(ctx, r1.NameID)
 		}
 	}
 

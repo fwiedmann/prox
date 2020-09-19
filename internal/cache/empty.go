@@ -16,5 +16,4 @@ func (Empty) Get(_ route.Route, _ *http.Request) *http.Response {
 
 // Save will always discard the request
 func (Empty) Save(route route.Route, _ *http.Request, response *http.Response) {
-	return
 }

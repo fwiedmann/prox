@@ -61,11 +61,11 @@ func TestHTTPInMemoryCache_Get(t *testing.T) {
 			cacheSizeAfterExec: 1,
 		},
 	}
-	for _, tt := range tests {
+	for _, tt := range tests { //nolint
 		t.Run(tt.name, func(t *testing.T) {
 			hc := &HTTPInMemoryCache{
 				store:               tt.fields.store,
-				mtx:                 tt.fields.mtx,
+				mtx:                 tt.fields.mtx, //nolint
 				maxCacheSizeInBytes: tt.fields.maxCacheSizeInBytes,
 				cacheSizeInBytes:    tt.fields.cacheSizeInBytes,
 			}
@@ -164,16 +164,16 @@ func TestHTTPInMemoryCache_isValidateSave(t *testing.T) {
 			want: false,
 		},
 	}
-	for _, tt := range tests {
+	for _, tt := range tests { //nolint
 		t.Run(tt.name, func(t *testing.T) {
 			hc := &HTTPInMemoryCache{
 				store:               tt.fields.store,
-				mtx:                 tt.fields.mtx,
+				mtx:                 tt.fields.mtx, //nolint
 				maxCacheSizeInBytes: tt.fields.maxCacheSizeInBytes,
 				cacheSizeInBytes:    tt.fields.cacheSizeInBytes,
 			}
 
-			m := route.NewManager(route.NewInMemRepo())
+			m := route.NewManager(route.NewInMemRepo(), route.CreateHTTPClientForRoute)
 
 			if err := m.CreateRoute(context.Background(), &tt.args.route); err != nil {
 				t.Error(err)
@@ -258,10 +258,10 @@ func TestHTTPInMemoryCache_Save(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
+	for _, tt := range tests { //nolint
 		t.Run(tt.name, func(t *testing.T) {
 
-			m := route.NewManager(route.NewInMemRepo())
+			m := route.NewManager(route.NewInMemRepo(), route.CreateHTTPClientForRoute)
 
 			if err := m.CreateRoute(context.Background(), &tt.args.route); err != nil {
 				t.Error(err)
@@ -286,7 +286,7 @@ func TestHTTPInMemoryCache_Save(t *testing.T) {
 
 			hc := &HTTPInMemoryCache{
 				store:               tt.fields.store,
-				mtx:                 tt.fields.mtx,
+				mtx:                 tt.fields.mtx, //nolint
 				maxCacheSizeInBytes: tt.fields.maxCacheSizeInBytes,
 				cacheSizeInBytes:    tt.fields.cacheSizeInBytes,
 			}

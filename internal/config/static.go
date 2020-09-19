@@ -49,7 +49,7 @@ func ParseStaticFile(path string) (Static, error) {
 		return Static{}, err
 	}
 
-	if !strings.HasSuffix(file.Name(), ".yaml") && !strings.HasSuffix(file.Name(), ".yaml") {
+	if !strings.HasSuffix(file.Name(), ".yaml") && !strings.HasSuffix(file.Name(), ".yml") {
 		return Static{}, ErrorInvalidFileType
 	}
 

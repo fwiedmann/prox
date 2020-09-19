@@ -32,8 +32,8 @@ func NewDynamicTLSConfig(configFile string) *TLS {
 
 // Pair hold the paths to a certificate pair
 type Pair struct {
-	Certificate string `yaml="certificate"`
-	Key         string `yaml="key"`
+	Certificate string `yaml:"certificate"`
+	Key         string `yaml:"key"`
 }
 
 func (p Pair) ID() string {
@@ -164,7 +164,7 @@ func (t *TLS) startWatchPair(ctx context.Context, pair Pair) {
 
 func (t *TLS) deleteStalePairs(pairs []Pair) {
 	t.mtx.Lock()
-	for id, _ := range t.certStore {
+	for id := range t.certStore {
 		var found bool
 		for _, pair := range pairs {
 			if id == pair.ID() {
