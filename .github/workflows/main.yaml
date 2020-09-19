@@ -73,3 +73,5 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
           repository: wiedmannfelix/prox
           tags: latest
+      - name: release
+        run: ./go-semantic-release release

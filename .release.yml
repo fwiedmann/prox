@@ -1,0 +1,15 @@
+commitFormat: angular
+title: "prox release"
+branch:
+  master: release
+changelog:
+  docker:
+    latest: true
+    repository: "wiedmannfelix/prox"
+release: 'github'
+assets:
+  - name: ./prox
+    compress: false
+github:
+  repo: "prox"
+  user: "fwiedmann"
