@@ -2,8 +2,10 @@ package route
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"regexp"
 	"time"
@@ -18,14 +20,13 @@ var (
 	ErrorDuplicatedRequestIdentifier     = errors.New("all request identifiers are configured. only one per route host / path is allowed")
 	ErrorDuplicatedHostRequestIdentifier = errors.New("all host request identifiers are configured. only one per route is allowed")
 	ErrorDuplicatedPathRequestIdentifier = errors.New("all path request identifiers are configured. only one per route is allowed")
-	ErrorInvalidHostName                 = errors.New(fmt.Sprintf("hostname is invalid. Used expression: %s", hostNameRegexp.String()))
+	ErrorInvalidHostName                 = fmt.Errorf("hostname is invalid. Used expression: %s", hostNameRegexp.String())
 	ErrorInvalidCacheTimeOutDuration     = errors.New("invalid cache time out duration format")
 	ErrorInvalidUpstreamTimeOutDuration  = errors.New("invalid upstream time out duration format")
 	ErrorInvalidUpstreamHost             = errors.New("invalid upstream host")
 
-	hostNameRegexp = regexp.MustCompile("^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])(\\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9]))*$")
-	pathRegexp     = regexp.MustCompile("(\\/[0-9].*\\?|$)")
-	wildcardRegexp = regexp.MustCompile("[\\s\\S]*")
+	hostNameRegexp = regexp.MustCompile(`^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*$`)
+	wildcardRegexp = regexp.MustCompile(`[\s\S]*`)
 )
 
 const defaultHTTPUpstreamTimeoutDuration = "10s"
@@ -33,14 +34,16 @@ const defaultCacheTimeoutDuration = "10m"
 const megaBytesToBytesMultiplier = 1e+6
 
 type manager struct {
-	repo repository
+	repo             repository
+	createHTTPClient func(r *Route) *http.Client
 }
 
 // NewManager return a manager to interact with the entities stored in the repository.
 // The manager is responsible to apply the Route business rules.
-func NewManager(r repository) Manager {
+func NewManager(r repository, createHTTPClient func(r *Route) *http.Client) Manager {
 	return &manager{
-		repo: r,
+		repo:             r,
+		createHTTPClient: createHTTPClient,
 	}
 }
 
@@ -53,6 +56,11 @@ func (m *manager) UpdateRoute(ctx context.Context, r *Route) error {
 	if r.NameID == "" {
 		return ErrorNoEntityID
 	}
+
+	if err := m.parseAndValidateRoute(r); err != nil {
+		return err
+	}
+
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
@@ -79,6 +87,21 @@ func (m *manager) CreateRoute(ctx context.Context, r *Route) error {
 		return ErrorNoEntityID
 	}
 
+	if err := m.parseAndValidateRoute(r); err != nil {
+		return err
+	}
+
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	return m.repo.CreateRoute(ctx, r)
+}
+
+func (m *manager) parseAndValidateRoute(r *Route) error {
+	if r.NameID == "" {
+		return ErrorNoEntityID
+	}
+
 	if err := parseDurations(r); err != nil {
 		return err
 	}
@@ -101,10 +124,8 @@ func (m *manager) CreateRoute(ctx context.Context, r *Route) error {
 		return err
 	}
 
-	if ctx.Err() != nil {
-		return ctx.Err()
-	}
-	return m.repo.CreateRoute(ctx, r)
+	r.httpClient = m.createHTTPClient(r)
+	return nil
 }
 
 func parseDurations(r *Route) error {
@@ -260,4 +281,16 @@ func (m *manager) DeleteRoute(ctx context.Context, id NameID) error {
 		return ctx.Err()
 	}
 	return m.repo.DeleteRoute(ctx, id)
+}
+
+// CreateHTTPClientForRoute configure a *http.Client based on a routes configure
+func CreateHTTPClientForRoute(r *Route) *http.Client {
+	return &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: r.UpstreamTLSValidation,
+			},
+		},
+		Timeout: r.GetUpstreamTimeout(),
+	}
 }

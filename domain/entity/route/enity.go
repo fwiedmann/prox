@@ -50,6 +50,11 @@ type Route struct {
 	upstreamTimeoutDuration     time.Duration                                                `yaml:"-"`
 	cacheMaxBodySizeInBytes     int64                                                        `yaml:"-"`
 	upstreamURL                 *url.URL                                                     `yaml:"-"`
+	httpClient                  *http.Client                                                 `yaml:"-"`
+}
+
+func (r *Route) GetHTTPClient() *http.Client {
+	return r.httpClient
 }
 
 // String implements Stringer interface

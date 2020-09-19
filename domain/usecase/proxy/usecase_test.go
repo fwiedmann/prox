@@ -81,7 +81,7 @@ func Test_httpProxyUseCase_ServeHTTP(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			m := route.NewManager(route.NewInMemRepo())
+			m := route.NewManager(route.NewInMemRepo(), tt.fields.createHTTPClient)
 
 			for _, r := range tt.initFields.routes {
 				if err := m.CreateRoute(context.Background(), r); err != nil {
@@ -90,9 +90,8 @@ func Test_httpProxyUseCase_ServeHTTP(t *testing.T) {
 				}
 			}
 			u := &httpProxyUseCase{
-				routerManager:    m,
-				cache:            tt.fields.cache,
-				createHTTPClient: tt.fields.createHTTPClient,
+				routerManager: m,
+				cache:         tt.fields.cache,
 			}
 
 			server := httptest.NewServer(u)

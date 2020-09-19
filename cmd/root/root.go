@@ -64,7 +64,7 @@ var rootCmd = cobra.Command{
 			return err
 		}
 
-		manager := route.NewManager(route.NewInMemRepo())
+		manager := route.NewManager(route.NewInMemRepo(), route.CreateHTTPClientForRoute)
 		c := configure.NewFileConfigureUseCase(routesConfigFile, manager)
 
 		configErr := make(chan error, 2)
@@ -79,7 +79,7 @@ var rootCmd = cobra.Command{
 
 		for _, port := range staticConfig.Ports {
 			go func(p config.Port) {
-				px, err := proxy.NewUseCase(manager, configureCache(staticConfig.Cache.Enabled, staticConfig.Cache.CacheMaxSizeInMegaByte), p.Addr, staticConfig.AccessLogEnabled, proxy.CreateHTTPClientForRoute)
+				px, err := proxy.NewUseCase(manager, configureCache(staticConfig.Cache.Enabled, staticConfig.Cache.CacheMaxSizeInMegaByte), p.Addr, staticConfig.AccessLogEnabled)
 				if err != nil {
 					proxyErrorChan <- err
 					return
@@ -109,8 +109,10 @@ var rootCmd = cobra.Command{
 
 		select {
 		case err := <-configErr:
+			cancel()
 			return err
 		case err := <-proxyErrorChan:
+			cancel()
 			return err
 		case osSignal := <-osNotifyChan:
 			log.Warnf("received os %s signal, start  graceful shutdown of prox...", osSignal.String())

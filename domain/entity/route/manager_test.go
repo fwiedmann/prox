@@ -253,12 +253,13 @@ func Test_manager_CreateRoute(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &manager{
-				repo: tt.fields.repo,
+				repo:             tt.fields.repo,
+				createHTTPClient: CreateHTTPClientForRoute,
 			}
 			c := tt.args.ctx
-			cancel := func() {}
 			if tt.cancelCtx {
-				c, cancel = context.WithCancel(tt.args.ctx)
+				ctx, cancel := context.WithCancel(tt.args.ctx)
+				c = ctx
 				cancel()
 			}
 
@@ -333,7 +334,7 @@ func Test_manager_UpdateRoute(t *testing.T) {
 			fields: fields{},
 			args: args{
 				ctx: context.Background(),
-				r:   &Route{NameID: "test-route"}},
+				r:   &Route{NameID: "test-route", Hostname: "docker.com"}},
 			wantErr:   true,
 			errType:   context.Canceled,
 			cancelCtx: true,
@@ -342,13 +343,14 @@ func Test_manager_UpdateRoute(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &manager{
-				repo: tt.fields.repo,
+				repo:             tt.fields.repo,
+				createHTTPClient: CreateHTTPClientForRoute,
 			}
 
 			c := tt.args.ctx
-			cancel := func() {}
 			if tt.cancelCtx {
-				c, cancel = context.WithCancel(tt.args.ctx)
+				ctx, cancel := context.WithCancel(tt.args.ctx)
+				c = ctx
 				cancel()
 			}
 			err := m.UpdateRoute(c, tt.args.r)
@@ -397,9 +399,9 @@ func Test_manager_ListRoutes(t *testing.T) {
 			}
 
 			c := tt.args.ctx
-			cancel := func() {}
 			if tt.cancelCtx {
-				c, cancel = context.WithCancel(tt.args.ctx)
+				ctx, cancel := context.WithCancel(tt.args.ctx)
+				c = ctx
 				cancel()
 			}
 			_, err := m.ListRoutes(c)
@@ -471,9 +473,9 @@ func Test_manager_DeleteRoute(t *testing.T) {
 			}
 
 			c := tt.args.ctx
-			cancel := func() {}
 			if tt.cancelCtx {
-				c, cancel = context.WithCancel(tt.args.ctx)
+				ctx, cancel := context.WithCancel(tt.args.ctx)
+				c = ctx
 				cancel()
 			}
 			err := m.DeleteRoute(c, tt.args.id)
