@@ -7,6 +7,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
+        with:
+          go-version: '1.15.2'
       - name: Go test with race and coverage
         run: |
           go test -coverprofile=coverage.txt -covermode=atomic ./...
@@ -40,6 +42,8 @@ jobs:
           mv go-semantic-release.linux_x86_64 go-semantic-release
           chmod +x go-semantic-release
       - uses: actions/setup-go@v2
+        with:
+          go-version: '1.15.2'
       - name: Go build
         run: |
           CGO_ENABLED=0 go build -o prox -ldflags "-w -s"
