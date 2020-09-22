@@ -72,9 +72,9 @@ jobs:
         with:
           name: go-build-binary
       - name: Download releaser binary
-          uses: actions/download-artifact@v1
-          with:
-            name: releaser-tool
+        uses: actions/download-artifact@v1
+        with:
+          name: releaser-tool
       - name: move binary to working dir
         run: mv go-build-binary/prox .
       - name: move binary to working dir
