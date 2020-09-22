@@ -71,8 +71,14 @@ jobs:
         uses: actions/download-artifact@v1
         with:
           name: go-build-binary
+      - name: Download releaser binary
+          uses: actions/download-artifact@v1
+          with:
+            name: releaser-tool
       - name: move binary to working dir
         run: mv go-build-binary/prox .
+      - name: move binary to working dir
+          run: mv releaser-tool/go-semantic-release .
       - name: build-docker-latest
         uses: docker/build-push-action@v1
         with:
