@@ -67,11 +67,12 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - name: Download go-build binary
         uses: actions/download-artifact@v1
         with:
           name: go-build-binary
-          fetch-depth: 0
       - name: Download releaser binary
         uses: actions/download-artifact@v1
         with:
