@@ -88,7 +88,9 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           repository: wiedmannfelix/prox
-          tags: latest, ${{ env.PROX_VERSION }}
+          tags: |
+            latest
+            ${{ env.PROX_VERSION }}
       - name: release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
