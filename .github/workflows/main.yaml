@@ -89,7 +89,7 @@ jobs:
       - name: export version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: echo::set-env PROX_VERSION=::$(./go-semantic-release next)
+        run: echo"::set-env PROX_VERSION=:$(./go-semantic-release next)"
       - name: build-docker-latest
         uses: docker/build-push-action@v2
         with:
