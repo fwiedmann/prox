@@ -49,7 +49,7 @@ jobs:
           go-version: '1.15.2'
       - name: Go build
         run: |
-          CGO_ENABLED=0 go build -o prox -ldflags "-w -s"
+          CGO_ENABLED=0 go build -o prox -ldflags "-w -s" cmd/main.go
       - name: Upload binary
         uses: actions/upload-artifact@v1
         with:
