@@ -81,7 +81,7 @@ jobs:
       - name: move binary to working dir
         run: mv releaser-tool/go-semantic-release . && chmod +x go-semantic-release
       - name: export version
-        run: echo ":set-env PROX_VERSION=$(go-semantic-release next)"
+        run: echo ":set-env PROX_VERSION=$(./go-semantic-release next)"
       - name: build-docker-latest
         uses: docker/build-push-action@v1
         with:
