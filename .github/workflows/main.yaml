@@ -87,4 +87,6 @@ jobs:
           repository: wiedmannfelix/prox
           tags: latest
       - name: release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./go-semantic-release release
