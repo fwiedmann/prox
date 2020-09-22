@@ -71,6 +71,7 @@ jobs:
         uses: actions/download-artifact@v1
         with:
           name: go-build-binary
+          fetch-depth: 0
       - name: Download releaser binary
         uses: actions/download-artifact@v1
         with:
@@ -79,13 +80,17 @@ jobs:
         run: mv go-build-binary/prox .
       - name: move binary to working dir
         run: mv releaser-tool/go-semantic-release . && chmod +x go-semantic-release
+      - name: export version
+        run: echo ":set-env PROX_VERSION=$(go-semantic-release next)"
       - name: build-docker-latest
         uses: docker/build-push-action@v1
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           repository: wiedmannfelix/prox
-          tags: latest
+          tags:
+            - latest
+            - ${{ env.PROX_VERSION }}
       - name: release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
