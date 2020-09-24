@@ -98,7 +98,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: "wiedmannfelix/prox:latest,wiedmannfelix/proxy:${{ env.PROX_VERSION }}"
+          tags: "wiedmannfelix/prox:latest,wiedmannfelix/prox:${{ env.PROX_VERSION }}"
       - name: release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
